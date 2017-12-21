@@ -23,16 +23,18 @@ package org.apache.lucene.index;
 import java.io.Closeable;
 import java.io.IOException;
 
-import org.apache.lucene.util.IOUtils;
-import org.apache.lucene.util.UnicodeUtil;
 import org.apache.lucene.index.FieldInfo.IndexOptions;
 import org.apache.lucene.store.IndexOutput;
+import org.apache.lucene.util.IOUtils;
+import org.apache.lucene.util.UnicodeUtil;
+
+import com.google.j2objc.annotations.Weak;
 
 final class FormatPostingsDocsWriter extends FormatPostingsDocsConsumer implements Closeable {
 
   final IndexOutput out;
-  final FormatPostingsTermsWriter parent;
-  final FormatPostingsPositionsWriter posWriter;
+  @Weak final FormatPostingsTermsWriter parent;
+  @Weak final FormatPostingsPositionsWriter posWriter;
   final DefaultSkipListWriter skipListWriter;
   final int skipInterval;
   final int totalNumDocs;
@@ -48,12 +50,12 @@ final class FormatPostingsDocsWriter extends FormatPostingsDocsConsumer implemen
     boolean success = false;
     try {
       totalNumDocs = parent.parent.totalNumDocs;
-      
+
       // TODO: abstraction violation
       skipInterval = parent.parent.termsOut.skipInterval;
       skipListWriter = parent.parent.skipListWriter;
       skipListWriter.setFreqOutput(out);
-      
+
       posWriter = new FormatPostingsPositionsWriter(state, this);
       success = true;
     } finally {
