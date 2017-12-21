@@ -18,9 +18,12 @@ package org.apache.lucene.index;
  */
 
 import java.io.IOException;
+
 import org.apache.lucene.store.RAMOutputStream;
 import org.apache.lucene.util.ArrayUtil;
 import org.apache.lucene.util.RamUsageEstimator;
+
+import com.google.j2objc.annotations.Weak;
 
 /** This is a DocFieldConsumer that writes stored fields. */
 final class StoredFieldsWriter {
@@ -126,7 +129,7 @@ final class StoredFieldsWriter {
   }
 
   class PerDoc extends DocumentsWriter.DocWriter {
-    final DocumentsWriter.PerDocBuffer buffer = docWriter.newPerDocBuffer();
+    @Weak final DocumentsWriter.PerDocBuffer buffer = docWriter.newPerDocBuffer();
     RAMOutputStream fdt = new RAMOutputStream(buffer);
     int numStoredFields;
 

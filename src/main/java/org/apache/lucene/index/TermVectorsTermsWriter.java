@@ -1,5 +1,9 @@
 package org.apache.lucene.index;
 
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -23,10 +27,7 @@ import org.apache.lucene.util.ArrayUtil;
 import org.apache.lucene.util.IOUtils;
 import org.apache.lucene.util.RamUsageEstimator;
 
-import java.io.IOException;
-import java.util.Collection;
-
-import java.util.Map;
+import com.google.j2objc.annotations.Weak;
 
 final class TermVectorsTermsWriter extends TermsHashConsumer {
 
@@ -110,7 +111,7 @@ final class TermVectorsTermsWriter extends TermsHashConsumer {
     }
   }
 
-  synchronized void initTermVectorsWriter() throws IOException {        
+  synchronized void initTermVectorsWriter() throws IOException {
     if (tvx == null) {
       boolean success = false;
       try {
@@ -122,7 +123,7 @@ final class TermVectorsTermsWriter extends TermsHashConsumer {
         tvx = docWriter.directory.createOutput(IndexFileNames.segmentFileName(docWriter.getSegment(), IndexFileNames.VECTORS_INDEX_EXTENSION));
         tvd = docWriter.directory.createOutput(IndexFileNames.segmentFileName(docWriter.getSegment(), IndexFileNames.VECTORS_DOCUMENTS_EXTENSION));
         tvf = docWriter.directory.createOutput(IndexFileNames.segmentFileName(docWriter.getSegment(), IndexFileNames.VECTORS_FIELDS_EXTENSION));
-        
+
         tvx.writeInt(TermVectorsReader.FORMAT_CURRENT);
         tvd.writeInt(TermVectorsReader.FORMAT_CURRENT);
         tvf.writeInt(TermVectorsReader.FORMAT_CURRENT);
@@ -181,22 +182,22 @@ final class TermVectorsTermsWriter extends TermsHashConsumer {
       // cannot happen since we suppress exceptions
       throw new RuntimeException(e);
     }
-    
+
     try {
       docWriter.directory.deleteFile(IndexFileNames.segmentFileName(docWriter.getSegment(), IndexFileNames.VECTORS_INDEX_EXTENSION));
     } catch (IOException ignored) {
     }
-    
+
     try {
       docWriter.directory.deleteFile(IndexFileNames.segmentFileName(docWriter.getSegment(), IndexFileNames.VECTORS_DOCUMENTS_EXTENSION));
     } catch (IOException ignored) {
     }
-    
+
     try {
       docWriter.directory.deleteFile(IndexFileNames.segmentFileName(docWriter.getSegment(), IndexFileNames.VECTORS_FIELDS_EXTENSION));
     } catch (IOException ignored) {
     }
-    
+
     tvx = tvd = tvf = null;
     lastDocID = 0;
   }
@@ -208,7 +209,7 @@ final class TermVectorsTermsWriter extends TermsHashConsumer {
 
   class PerDoc extends DocumentsWriter.DocWriter {
 
-    final DocumentsWriter.PerDocBuffer buffer = docWriter.newPerDocBuffer();
+    @Weak final DocumentsWriter.PerDocBuffer buffer = docWriter.newPerDocBuffer();
     RAMOutputStream perDocTvf = new RAMOutputStream(buffer);
 
     int numVectorFields;
