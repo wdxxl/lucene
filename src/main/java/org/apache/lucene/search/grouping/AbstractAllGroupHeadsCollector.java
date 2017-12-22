@@ -1,5 +1,8 @@
 package org.apache.lucene.search.grouping;
 
+import java.io.IOException;
+import java.util.Collection;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -21,8 +24,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.Collector;
 import org.apache.lucene.util.FixedBitSet;
 
-import java.io.IOException;
-import java.util.Collection;
+import com.google.j2objc.annotations.WeakOuter;
 
 /**
  * This collector specializes in collecting the most relevant document (group head) for each group that match the query.
@@ -145,6 +147,7 @@ public abstract class AbstractAllGroupHeadsCollector<GH extends AbstractAllGroup
    *
    * The group head contains a group value with its associated most relevant document id.
    */
+  @WeakOuter
   public static abstract class GroupHead<GROUP_VALUE_TYPE> {
 
     public final GROUP_VALUE_TYPE groupValue;

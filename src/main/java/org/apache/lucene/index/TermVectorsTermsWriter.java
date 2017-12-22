@@ -28,6 +28,7 @@ import org.apache.lucene.util.IOUtils;
 import org.apache.lucene.util.RamUsageEstimator;
 
 import com.google.j2objc.annotations.Weak;
+import com.google.j2objc.annotations.WeakOuter;
 
 final class TermVectorsTermsWriter extends TermsHashConsumer {
 
@@ -207,6 +208,7 @@ final class TermVectorsTermsWriter extends TermsHashConsumer {
     docFreeList[freeCount++] = doc;
   }
 
+  @WeakOuter
   class PerDoc extends DocumentsWriter.DocWriter {
 
     @Weak final DocumentsWriter.PerDocBuffer buffer = docWriter.newPerDocBuffer();

@@ -24,6 +24,7 @@ import org.apache.lucene.util.ArrayUtil;
 import org.apache.lucene.util.RamUsageEstimator;
 
 import com.google.j2objc.annotations.Weak;
+import com.google.j2objc.annotations.WeakOuter;
 
 /** This is a DocFieldConsumer that writes stored fields. */
 final class StoredFieldsWriter {
@@ -128,6 +129,7 @@ final class StoredFieldsWriter {
     docFreeList[freeCount++] = perDoc;
   }
 
+  @WeakOuter
   class PerDoc extends DocumentsWriter.DocWriter {
     @Weak final DocumentsWriter.PerDocBuffer buffer = docWriter.newPerDocBuffer();
     RAMOutputStream fdt = new RAMOutputStream(buffer);

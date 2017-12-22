@@ -1,5 +1,12 @@
 package org.apache.lucene.search.grouping;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -18,10 +25,13 @@ package org.apache.lucene.search.grouping;
  */
 
 import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.search.*;
+import org.apache.lucene.search.FieldCache;
+import org.apache.lucene.search.FieldComparator;
+import org.apache.lucene.search.Scorer;
+import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
 
-import java.io.IOException;
-import java.util.*;
+import com.google.j2objc.annotations.WeakOuter;
 
 /**
  * A base implementation of {@link AbstractAllGroupHeadsCollector} for retrieving the most relevant groups when grouping
@@ -159,6 +169,7 @@ public abstract class TermAllGroupHeadsCollector<GH extends AbstractAllGroupHead
       }
     }
 
+    @WeakOuter
     class GroupHead extends AbstractAllGroupHeadsCollector.GroupHead<String> {
 
       final FieldComparator[] comparators;
@@ -273,6 +284,7 @@ public abstract class TermAllGroupHeadsCollector<GH extends AbstractAllGroupHead
       }
     }
 
+    @WeakOuter
     class GroupHead extends AbstractAllGroupHeadsCollector.GroupHead<String> {
 
       String[] sortValues;
@@ -413,6 +425,7 @@ public abstract class TermAllGroupHeadsCollector<GH extends AbstractAllGroupHead
       }
     }
 
+    @WeakOuter
     class GroupHead extends AbstractAllGroupHeadsCollector.GroupHead<String> {
 
       String[] sortValues;
@@ -525,6 +538,7 @@ public abstract class TermAllGroupHeadsCollector<GH extends AbstractAllGroupHead
       }
     }
 
+    @WeakOuter
     class GroupHead extends AbstractAllGroupHeadsCollector.GroupHead<String> {
 
       float[] scores;

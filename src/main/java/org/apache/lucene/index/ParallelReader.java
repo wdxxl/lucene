@@ -1,5 +1,19 @@
 package org.apache.lucene.index;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -23,9 +37,7 @@ import org.apache.lucene.document.FieldSelectorResult;
 import org.apache.lucene.document.Fieldable;
 import org.apache.lucene.util.MapBackedSet;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import com.google.j2objc.annotations.WeakOuter;
 
 
 /** An IndexReader which reads multiple, parallel indexes.  Each index added
@@ -57,12 +69,12 @@ public class ParallelReader extends IndexReader {
   private int numDocs;
   private boolean hasDeletions;
 
- /** Construct a ParallelReader. 
+ /** Construct a ParallelReader.
   * <p>Note that all subreaders are closed if this ParallelReader is closed.</p>
   */
   public ParallelReader() throws IOException { this(true); }
-   
- /** Construct a ParallelReader. 
+
+ /** Construct a ParallelReader.
   * @param closeSubReaders indicates whether the subreaders should be closed
   * when this ParallelReader is closed
   */
@@ -132,13 +144,13 @@ public class ParallelReader extends IndexReader {
     if (!ignoreStoredFields)
       storedFieldReaders.add(reader);             // add to storedFieldReaders
     readers.add(reader);
-    
+
     if (incRefReaders) {
       reader.incRef();
     }
     decrefOnClose.add(Boolean.valueOf(incRefReaders));
   }
-  
+
   @Override
   public synchronized Object clone() {
     // doReopen calls ensureOpen
@@ -148,15 +160,15 @@ public class ParallelReader extends IndexReader {
       throw new RuntimeException(ex);
     }
   }
-  
+
   /**
    * Tries to reopen the subreaders.
    * <br>
-   * If one or more subreaders could be re-opened (i. e. subReader.reopen() 
-   * returned a new instance != subReader), then a new ParallelReader instance 
+   * If one or more subreaders could be re-opened (i. e. subReader.reopen()
+   * returned a new instance != subReader), then a new ParallelReader instance
    * is returned, otherwise null is returned.
    * <p>
-   * A re-opened instance might share one or more subreaders with the old 
+   * A re-opened instance might share one or more subreaders with the old
    * instance. Index modification operations result in undefined behavior
    * when performed before the old instance is closed.
    * (see {@link IndexReader#openIfChanged}).
@@ -164,24 +176,24 @@ public class ParallelReader extends IndexReader {
    * If subreaders are shared, then the reference count of those
    * readers is increased to ensure that the subreaders remain open
    * until the last referring reader is closed.
-   * 
+   *
    * @throws CorruptIndexException if the index is corrupt
-   * @throws IOException if there is a low-level IO error 
+   * @throws IOException if there is a low-level IO error
    */
   @Override
   protected synchronized IndexReader doOpenIfChanged() throws CorruptIndexException, IOException {
     // doReopen calls ensureOpen
     return doReopen(false);
   }
-    
+
   protected IndexReader doReopen(boolean doClone) throws CorruptIndexException, IOException {
     ensureOpen();
-    
+
     boolean reopened = false;
     List<IndexReader> newReaders = new ArrayList<IndexReader>();
-    
+
     boolean success = false;
-    
+
     try {
       for (final IndexReader oldReader : readers) {
         IndexReader newReader = null;
@@ -225,7 +237,7 @@ public class ParallelReader extends IndexReader {
           newReader.incRef();
         } else {
           // this is a new subreader instance, so on close() we don't
-          // decRef but close it 
+          // decRef but close it
           newDecrefOnClose.add(Boolean.FALSE);
         }
         pr.add(newReader, !storedFieldReaders.contains(oldReader));
@@ -341,7 +353,7 @@ public class ParallelReader extends IndexReader {
     ensureOpen();
     IndexReader reader = fieldToReader.get(field);
     if (reader != null) {
-      reader.getTermFreqVector(docNumber, field, mapper); 
+      reader.getTermFreqVector(docNumber, field, mapper);
     }
   }
 
@@ -431,9 +443,9 @@ public class ParallelReader extends IndexReader {
     ensureOpen();
     return new ParallelTermPositions();
   }
-  
+
   /**
-   * Checks recursively if all subreaders are up to date. 
+   * Checks recursively if all subreaders are up to date.
    */
   @Override
   public boolean isCurrent() throws CorruptIndexException, IOException {
@@ -443,7 +455,7 @@ public class ParallelReader extends IndexReader {
         return false;
       }
     }
-    
+
     // all subreaders are up to date
     return true;
   }
@@ -457,7 +469,7 @@ public class ParallelReader extends IndexReader {
         return false;
       }
     }
-    
+
     // all subindexes are optimized
     return true;
   }
@@ -503,6 +515,7 @@ public class ParallelReader extends IndexReader {
     return fieldSet;
   }
 
+  @WeakOuter
   private class ParallelTermEnum extends TermEnum {
     private String field;
     private Iterator<String> fieldIterator;
@@ -551,7 +564,7 @@ public class ParallelReader extends IndexReader {
         else
           termEnum.close();
       }
- 
+
       return false;                               // no more fields
     }
 
@@ -630,6 +643,7 @@ public class ParallelReader extends IndexReader {
 
   }
 
+  @WeakOuter
   private class ParallelTermPositions
     extends ParallelTermDocs implements TermPositions {
 

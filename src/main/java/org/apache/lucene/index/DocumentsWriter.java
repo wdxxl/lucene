@@ -40,6 +40,7 @@ import org.apache.lucene.util.RamUsageEstimator;
 import org.apache.lucene.util.ThreadInterruptedException;
 
 import com.google.j2objc.annotations.Weak;
+import com.google.j2objc.annotations.WeakOuter;
 
 
 /**
@@ -186,6 +187,7 @@ final class DocumentsWriter {
   /**
    * RAMFile buffer for DocWriters.
    */
+  @WeakOuter
   class PerDocBuffer extends RAMFile {
 
     /**
@@ -258,7 +260,7 @@ final class DocumentsWriter {
     }
   };
 
-  final DocConsumer consumer;
+  @Weak final DocConsumer consumer;
 
   // How much RAM we can use before flushing.  This is 0 if
   // we are flushing by doc count instead.

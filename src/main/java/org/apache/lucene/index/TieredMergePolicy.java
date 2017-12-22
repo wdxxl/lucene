@@ -18,13 +18,15 @@ package org.apache.lucene.index;
  */
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Map;
+
+import com.google.j2objc.annotations.WeakOuter;
 
 /**
  *  Merges segments of approximately equal size, subject to
@@ -34,7 +36,7 @@ import java.util.ArrayList;
  *  separates how many segments are merged at once ({@link
  *  #setMaxMergeAtOnce}) from how many segments are allowed
  *  per tier ({@link #setSegmentsPerTier}).  This merge
- *  policy also does not over-merge (ie, cascade merges). 
+ *  policy also does not over-merge (ie, cascade merges).
  *
  *  <p>For normal merging, this policy first computes a
  *  "budget" of how many segments are allowed by be in the
@@ -52,7 +54,7 @@ import java.util.ArrayList;
  *  {@link #setMaxMergedSegmentMB}, then the policy will
  *  merge fewer segments (down to 1 at once, if that one has
  *  deletions) to keep the segment size under budget.
- *      
+ *
  *  <p<b>NOTE</b>: this policy freely merges non-adjacent
  *  segments; if this is a problem, use {@link
  *  LogMergePolicy}.
@@ -171,7 +173,7 @@ public class TieredMergePolicy extends MergePolicy {
 
   /** When forceMergeDeletes is called, we only merge away a
    *  segment if its delete percentage is over this
-   *  threshold.  Default is 10%. */ 
+   *  threshold.  Default is 10%. */
   public TieredMergePolicy setForceMergeDeletesPctAllowed(double v) {
     if (v < 0.0 || v > 100.0) {
       throw new IllegalArgumentException("forceMergeDeletesPctAllowed must be between 0.0 and 100.0 inclusive (got " + v + ")");
@@ -231,12 +233,13 @@ public class TieredMergePolicy extends MergePolicy {
     this.noCFSRatio = noCFSRatio;
     return this;
   }
-  
+
   /** @see #setNoCFSRatio */
   public double getNoCFSRatio() {
     return noCFSRatio;
   }
 
+  @WeakOuter
   private class SegmentByteSizeDescending implements Comparator<SegmentInfo> {
     public int compare(SegmentInfo o1, SegmentInfo o2) {
       try {
@@ -396,7 +399,7 @@ public class TieredMergePolicy extends MergePolicy {
             bestMergeBytes = totAfterMergeBytes;
           }
         }
-        
+
         if (best != null) {
           if (spec == null) {
             spec = new MergeSpecification();
@@ -517,7 +520,7 @@ public class TieredMergePolicy extends MergePolicy {
     }
 
     int end = eligible.size();
-    
+
     MergeSpecification spec = null;
 
     // Do full merges, first, backwards:
@@ -630,9 +633,9 @@ public class TieredMergePolicy extends MergePolicy {
 
   // Segment size in bytes, pro-rated by % deleted
   private long size(SegmentInfo info) throws IOException {
-    final long byteSize = info.sizeInBytes(true);    
+    final long byteSize = info.sizeInBytes(true);
     final int delCount = writer.get().numDeletedDocs(info);
-    final double delRatio = (info.docCount <= 0 ? 0.0f : ((double)delCount / (double)info.docCount));    
+    final double delRatio = (info.docCount <= 0 ? 0.0f : ((double)delCount / (double)info.docCount));
     assert delRatio <= 1.0;
     return (long) (byteSize * (1.0-delRatio));
   }

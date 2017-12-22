@@ -23,6 +23,8 @@ import java.util.List;
 
 import org.apache.lucene.search.BooleanClause.Occur;
 
+import com.google.j2objc.annotations.WeakOuter;
+
 /* See the description in BooleanScorer.java, comparing
  * BooleanScorer & BooleanScorer2 */
 
@@ -32,16 +34,17 @@ import org.apache.lucene.search.BooleanClause.Occur;
  * <br>Uses ConjunctionScorer, DisjunctionScorer, ReqOptScorer and ReqExclScorer.
  */
 class BooleanScorer2 extends Scorer {
-  
+
   private final List<Scorer> requiredScorers;
   private final List<Scorer> optionalScorers;
   private final List<Scorer> prohibitedScorers;
 
+  @WeakOuter
   private class Coordinator {
     float[] coordFactors = null;
     int maxCoord = 0; // to be increased for each non prohibited scorer
     int nrMatchers; // to be increased by score() of match counting scorers.
-    
+
     void init(Similarity sim, boolean disableCoord) { // use after all scorers have been added.
       coordFactors = new float[optionalScorers.size() + requiredScorers.size() + 1];
       for (int i = 0; i < coordFactors.length; i++) {
@@ -66,11 +69,11 @@ class BooleanScorer2 extends Scorer {
    * Creates a {@link Scorer} with the given similarity and lists of required,
    * prohibited and optional scorers. In no required scorers are added, at least
    * one of the optional scorers will have to match during the search.
-   * 
+   *
    * @param weight
    *          The BooleanWeight to be used.
    * @param disableCoord
-   *          If this parameter is true, coordination level matching 
+   *          If this parameter is true, coordination level matching
    *          ({@link Similarity#coord(int, int)}) is not used.
    * @param minNrShouldMatch
    *          The minimum number of optional added scorers that should match
@@ -94,13 +97,13 @@ class BooleanScorer2 extends Scorer {
     coordinator.maxCoord = maxCoord;
 
     optionalScorers = optional;
-    requiredScorers = required;    
+    requiredScorers = required;
     prohibitedScorers = prohibited;
-    
+
     coordinator.init(similarity, disableCoord);
     countingSumScorer = makeCountingSumScorer(disableCoord, similarity);
   }
-  
+
   /** Count a scorer as a single match. */
   private class SingleMatchScorer extends Scorer {
     private Scorer scorer;
@@ -238,7 +241,7 @@ class BooleanScorer2 extends Scorer {
             ? new SingleMatchScorer(requiredScorers.get(0))
             : countingConjunctionSumScorer(disableCoord, similarity, requiredScorers);
       if (minNrShouldMatch > 0) { // use a required disjunction scorer over the optional scorers
-        return addProhibitedScorers( 
+        return addProhibitedScorers(
                       dualConjunctionSumScorer( // non counting
                               disableCoord,
                               similarity,
@@ -256,7 +259,7 @@ class BooleanScorer2 extends Scorer {
       }
     }
   }
-  
+
   /** Returns the scorer to be used for match counting and score summing.
    * Uses the given required scorer and the prohibitedScorers.
    * @param requiredCountingSumScorer A required scorer already built.
@@ -281,7 +284,7 @@ class BooleanScorer2 extends Scorer {
       collector.collect(doc);
     }
   }
-  
+
   @Override
   protected boolean score(Collector collector, int max, int firstDocID) throws IOException {
     doc = firstDocID;
@@ -297,12 +300,12 @@ class BooleanScorer2 extends Scorer {
   public int docID() {
     return doc;
   }
-  
+
   @Override
   public int nextDoc() throws IOException {
     return doc = countingSumScorer.nextDoc();
   }
-  
+
   @Override
   public float score() throws IOException {
     coordinator.nrMatchers = 0;

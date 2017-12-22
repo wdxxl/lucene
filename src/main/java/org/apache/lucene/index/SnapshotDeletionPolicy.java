@@ -1,5 +1,8 @@
 package org.apache.lucene.index;
 
+import java.io.IOException;
+import java.util.ArrayList;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -21,13 +24,13 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
-import java.io.IOException;
+import java.util.Set;
 
 import org.apache.lucene.store.Directory;
+
+import com.google.j2objc.annotations.WeakOuter;
 
 /**
  * An {@link IndexDeletionPolicy} that wraps around any other
@@ -38,7 +41,7 @@ import org.apache.lucene.store.Directory;
  * {@link IndexDeletionPolicy}, this gives you the freedom to continue using
  * whatever {@link IndexDeletionPolicy} you would normally want to use with your
  * index.
- * 
+ *
  * <p>
  * This class maintains all snapshots in-memory, and so the information is not
  * persisted and not protected against system failures. If persistency is
@@ -46,7 +49,7 @@ import org.apache.lucene.store.Directory;
  * extension) and when creating a new instance of this deletion policy, pass the
  * persistent snapshots information to
  * {@link #SnapshotDeletionPolicy(IndexDeletionPolicy, Map)}.
- * 
+ *
  * @lucene.experimental
  */
 public class SnapshotDeletionPolicy implements IndexDeletionPolicy {
@@ -56,19 +59,20 @@ public class SnapshotDeletionPolicy implements IndexDeletionPolicy {
     String id;
     String segmentsFileName;
     IndexCommit commit;
-    
+
     public SnapshotInfo(String id, String segmentsFileName, IndexCommit commit) {
       this.id = id;
       this.segmentsFileName = segmentsFileName;
       this.commit = commit;
     }
-    
+
     @Override
     public String toString() {
       return id + " : " + segmentsFileName;
     }
   }
-  
+
+  @WeakOuter
   protected class SnapshotCommitPoint extends IndexCommit {
     protected IndexCommit cp;
 
@@ -157,7 +161,7 @@ public class SnapshotDeletionPolicy implements IndexDeletionPolicy {
   /**
    * {@link SnapshotDeletionPolicy} wraps another {@link IndexDeletionPolicy} to
    * enable flexible snapshotting.
-   * 
+   *
    * @param primary
    *          the {@link IndexDeletionPolicy} that is used on non-snapshotted
    *          commits. Snapshotted commits, are not deleted until explicitly
@@ -216,7 +220,7 @@ public class SnapshotDeletionPolicy implements IndexDeletionPolicy {
    * open an IndexReader on a specific commit point, or rollback the index by
    * opening an IndexWriter with the IndexCommit specified in its
    * {@link IndexWriterConfig}.
-   * 
+   *
    * @param id
    *          a unique identifier of the commit that was snapshotted.
    * @throws IllegalStateException
@@ -282,7 +286,7 @@ public class SnapshotDeletionPolicy implements IndexDeletionPolicy {
      * Second, see if there are any instances where a snapshot ID was specified
      * in the constructor but an IndexCommit doesn't exist. In this case, the ID
      * should be removed.
-     * 
+     *
      * Note: This code is protective for extreme cases where IDs point to
      * non-existent segments. As the constructor should have received its
      * information via a call to getSnapshots(), the data should be well-formed.
@@ -308,7 +312,7 @@ public class SnapshotDeletionPolicy implements IndexDeletionPolicy {
 
   /**
    * Release a snapshotted commit by ID.
-   * 
+   *
    * @param id
    *          a unique identifier of the commit that is un-snapshotted.
    * @throws IllegalStateException
@@ -342,7 +346,7 @@ public class SnapshotDeletionPolicy implements IndexDeletionPolicy {
    * take a snapshot at a particularly bad time (say just before you call
    * forceMerge) then in the worst case this could consume an extra 1X of your
    * total index size, until you release the snapshot.
-   * 
+   *
    * @param id
    *          a unique identifier of the commit that is being snapshotted.
    * @throws IllegalStateException
