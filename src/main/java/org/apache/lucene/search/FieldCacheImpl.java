@@ -30,9 +30,11 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.index.TermDocs;
 import org.apache.lucene.index.TermEnum;
 import org.apache.lucene.util.Bits;
+import org.apache.lucene.util.FieldCacheSanityChecker;
 import org.apache.lucene.util.FixedBitSet;
 import org.apache.lucene.util.StringHelper;
-import org.apache.lucene.util.FieldCacheSanityChecker;
+
+import com.google.j2objc.annotations.Weak;
 
 /**
  * Expert: The default cache implementation, storing all values in memory.
@@ -43,8 +45,8 @@ import org.apache.lucene.util.FieldCacheSanityChecker;
  * @since   lucene 1.4
  */
 class FieldCacheImpl implements FieldCache {
-	
-  private Map<Class<?>,Cache> caches;
+
+  @Weak private Map<Class<?>,Cache> caches;
   FieldCacheImpl() {
     init();
   }
@@ -70,7 +72,7 @@ class FieldCacheImpl implements FieldCache {
       c.purge(r);
     }
   }
-  
+
   public synchronized CacheEntry[] getCacheEntries() {
     List<CacheEntry> result = new ArrayList<CacheEntry>(17);
     for(final Map.Entry<Class<?>,Cache> cacheEntry: caches.entrySet()) {
@@ -92,7 +94,7 @@ class FieldCacheImpl implements FieldCache {
     }
     return result.toArray(new CacheEntry[result.size()]);
   }
-  
+
   private static final class CacheEntryImpl extends CacheEntry {
     private final Object readerKey;
     private final String fieldName;
@@ -152,10 +154,10 @@ class FieldCacheImpl implements FieldCache {
       this.wrapper = wrapper;
     }
 
-    final FieldCacheImpl wrapper;
+    @Weak final FieldCacheImpl wrapper;
 
     final Map<Object,Map<Entry,Object>> readerCache = new WeakHashMap<Object,Map<Entry,Object>>();
-    
+
     protected abstract Object createValue(IndexReader reader, Entry key, boolean setDocsWithField)
         throws IOException;
 
@@ -349,7 +351,7 @@ class FieldCacheImpl implements FieldCache {
       return retArray;
     }
   }
-  
+
   // inherit javadocs
   public short[] getShorts (IndexReader reader, String field) throws IOException {
     return getShorts(reader, field, null, false);
@@ -415,7 +417,7 @@ class FieldCacheImpl implements FieldCache {
       return retArray;
     }
   }
-  
+
   // null Bits means no docs matched
   void setDocsWithField(IndexReader reader, String field, Bits docsWithField) {
     final int maxDoc = reader.maxDoc();
@@ -512,7 +514,7 @@ class FieldCacheImpl implements FieldCache {
       return retArray;
     }
   }
-  
+
   public Bits getDocsWithField(IndexReader reader, String field)
       throws IOException {
     return (Bits) caches.get(DocsWithFieldCache.class).get(reader, new Entry(field, null), false);
@@ -522,12 +524,12 @@ class FieldCacheImpl implements FieldCache {
     DocsWithFieldCache(FieldCacheImpl wrapper) {
       super(wrapper);
     }
-    
+
     @Override
     protected Object createValue(IndexReader reader, Entry entryKey, boolean setDocsWithField /* ignored */)
     throws IOException {
       final Entry entry = entryKey;
-      final String field = entry.field;      
+      final String field = entry.field;
       FixedBitSet res = null;
       final TermDocs termDocs = reader.termDocs();
       final TermEnum termEnum = reader.terms(new Term(field));
@@ -639,7 +641,7 @@ class FieldCacheImpl implements FieldCache {
   public long[] getLongs(IndexReader reader, String field) throws IOException {
     return getLongs(reader, field, null, false);
   }
-  
+
   // inherit javadocs
   public long[] getLongs(IndexReader reader, String field, FieldCache.LongParser parser)
       throws IOException {

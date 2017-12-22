@@ -19,10 +19,12 @@ package org.apache.lucene.index;
 
 import org.apache.lucene.util.UnicodeUtil;
 
+import com.google.j2objc.annotations.Weak;
+
 final class TermVectorsTermsWriterPerThread extends TermsHashConsumerPerThread {
 
   final TermVectorsTermsWriter termsWriter;
-  final TermsHashPerThread termsHashPerThread;
+  @Weak final TermsHashPerThread termsHashPerThread;
   final DocumentsWriter.DocState docState;
 
   TermVectorsTermsWriter.PerDoc doc;
@@ -32,7 +34,7 @@ final class TermVectorsTermsWriterPerThread extends TermsHashConsumerPerThread {
     this.termsHashPerThread = termsHashPerThread;
     docState = termsHashPerThread.docState;
   }
-  
+
   // Used by perField when serializing the term vectors
   final ByteSliceReader vectorSliceReader = new ByteSliceReader();
 

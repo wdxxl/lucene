@@ -1,5 +1,7 @@
 package org.apache.lucene.search;
 
+import java.io.IOException;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -18,23 +20,24 @@ package org.apache.lucene.search;
  */
 
 import java.util.List;
-import java.io.IOException;
 
 import org.apache.lucene.util.ScorerDocQueue;
 
+import com.google.j2objc.annotations.Weak;
+
 /** A Scorer for OR like queries, counterpart of <code>ConjunctionScorer</code>.
- * This Scorer implements {@link Scorer#skipTo(int)} and uses skipTo() on the given Scorers. 
+ * This Scorer implements {@link Scorer#skipTo(int)} and uses skipTo() on the given Scorers.
  */
 class DisjunctionSumScorer extends Scorer {
-  /** The number of subscorers. */ 
+  /** The number of subscorers. */
   private final int nrScorers;
-  
+
   /** The subscorers. */
   protected final List<Scorer> subScorers;
-  
+
   /** The minimum number of scorers that should match. */
   private final int minimumNrMatchers;
-  
+
   /** The scorerDocQueue contains all subscorers ordered by their current doc(),
    * with the minimum at the top.
    * <br>The scorerDocQueue is initialized the first time next() or skipTo() is called.
@@ -47,8 +50,8 @@ class DisjunctionSumScorer extends Scorer {
    * <code>nrMatchers</code> is the number of matching scorers,
    * and all scorers are after the matching doc, or are exhausted.
    */
-  private ScorerDocQueue scorerDocQueue;
-  
+  @Weak private ScorerDocQueue scorerDocQueue;
+
   /** The document number of the current match. */
   private int currentDoc = -1;
 
@@ -56,7 +59,7 @@ class DisjunctionSumScorer extends Scorer {
   protected int nrMatchers = -1;
 
   private double currentScore = Float.NaN;
-  
+
   /** Construct a <code>DisjunctionScorer</code>.
    * @param weight The weight to be used.
    * @param subScorers A collection of at least two subscorers.
@@ -70,7 +73,7 @@ class DisjunctionSumScorer extends Scorer {
    */
   public DisjunctionSumScorer(Weight weight, List<Scorer> subScorers, int minimumNrMatchers) throws IOException {
     super(weight);
-    
+
     nrScorers = subScorers.size();
 
     if (minimumNrMatchers <= 0) {
@@ -85,7 +88,7 @@ class DisjunctionSumScorer extends Scorer {
 
     initScorerDocQueue();
   }
-  
+
   /** Construct a <code>DisjunctionScorer</code>, using one as the minimum number
    * of matching subscorers.
    */
@@ -179,7 +182,7 @@ class DisjunctionSumScorer extends Scorer {
         currentScore += scorerDocQueue.topScore();
         nrMatchers++;
       } while (true);
-      
+
       if (nrMatchers >= minimumNrMatchers) {
         return true;
       } else if (scorerDocQueue.size() < minimumNrMatchers) {
@@ -187,18 +190,18 @@ class DisjunctionSumScorer extends Scorer {
       }
     } while (true);
   }
-  
+
   /** Returns the score of the current document matching the query.
    * Initially invalid, until {@link #nextDoc()} is called the first time.
    */
   @Override
   public float score() throws IOException { return (float)currentScore; }
-   
+
   @Override
   public int docID() {
     return currentDoc;
   }
-  
+
   /** Returns the number of subscorers matching the current document.
    * Initially invalid, until {@link #nextDoc()} is called the first time.
    */
@@ -210,7 +213,7 @@ class DisjunctionSumScorer extends Scorer {
    * Advances to the first match beyond the current whose document number is
    * greater than or equal to a given target. <br>
    * The implementation uses the skipTo() method on the subscorers.
-   * 
+   *
    * @param target
    *          The target document number.
    * @return the document whose number is greater than or equal to the given

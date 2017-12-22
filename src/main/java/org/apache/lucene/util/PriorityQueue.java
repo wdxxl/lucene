@@ -1,5 +1,7 @@
 package org.apache.lucene.util;
 
+import com.google.j2objc.annotations.Weak;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -23,13 +25,13 @@ package org.apache.lucene.util;
  *
  * <p><b>NOTE</b>: This class pre-allocates a full array of
  * length <code>maxSize+1</code>, in {@link #initialize}.
- * 
+ *
  * @lucene.internal
 */
 public abstract class PriorityQueue<T> {
   private int size;
   private int maxSize;
-  private T[] heap;
+  @Weak private T[] heap;
 
   /** Determines the ordering of objects in this priority queue.  Subclasses
    *  must define this one method.
@@ -42,37 +44,37 @@ public abstract class PriorityQueue<T> {
    * object which will be used by {@link #initialize(int)} to fill the queue, so
    * that the code which uses that queue can always assume it's full and only
    * change the top without attempting to insert any new object.<br>
-   * 
+   *
    * Those sentinel values should always compare worse than any non-sentinel
    * value (i.e., {@link #lessThan} should always favor the
    * non-sentinel values).<br>
-   * 
+   *
    * By default, this method returns false, which means the queue will not be
    * filled with sentinel values. Otherwise, the value returned will be used to
    * pre-populate the queue. Adds sentinel values to the queue.<br>
-   * 
+   *
    * If this method is extended to return a non-null value, then the following
    * usage pattern is recommended:
-   * 
+   *
    * <pre>
    * // extends getSentinelObject() to return a non-null value.
    * PriorityQueue<MyObject> pq = new MyQueue<MyObject>(numHits);
    * // save the 'top' element, which is guaranteed to not be null.
    * MyObject pqTop = pq.top();
    * &lt;...&gt;
-   * // now in order to add a new element, which is 'better' than top (after 
+   * // now in order to add a new element, which is 'better' than top (after
    * // you've verified it is better), it is as simple as:
    * pqTop.change().
    * pqTop = pq.updateTop();
    * </pre>
-   * 
+   *
    * <b>NOTE:</b> if this method returns a non-null value, it will be called by
    * {@link #initialize(int)} {@link #size()} times, relying on a new object to
    * be returned and will not check if it's null again. Therefore you should
    * ensure any call to this method creates a new instance and behaves
    * consistently, e.g., it cannot return null if it previously returned
    * non-null.
-   * 
+   *
    * @return the sentinel object to use to pre-populate the queue, or null if
    *         sentinel objects are not supported.
    */
@@ -107,7 +109,7 @@ public abstract class PriorityQueue<T> {
     }
     heap = (T[]) new Object[heapSize]; // T is unbounded type, so this unchecked cast works always
     this.maxSize = maxSize;
-    
+
     // If sentinel objects are supported, populate the queue with them
     T sentinel = getSentinelObject();
     if (sentinel != null) {
@@ -123,7 +125,7 @@ public abstract class PriorityQueue<T> {
    * Adds an Object to a PriorityQueue in log(size) time. If one tries to add
    * more objects than maxSize from initialize an
    * {@link ArrayIndexOutOfBoundsException} is thrown.
-   * 
+   *
    * @return the new 'top' element in the queue.
    */
   public final T add(T element) {
@@ -178,24 +180,24 @@ public abstract class PriorityQueue<T> {
     } else
       return null;
   }
-  
+
   /**
    * Should be called when the Object at top changes values. Still log(n) worst
    * case, but it's at least twice as fast to
-   * 
+   *
    * <pre>
    * pq.top().change();
    * pq.updateTop();
    * </pre>
-   * 
+   *
    * instead of
-   * 
+   *
    * <pre>
    * o = pq.pop();
    * o.change();
    * pq.push(o);
    * </pre>
-   * 
+   *
    * @return the new 'top' element.
    */
   public final T updateTop() {
@@ -247,7 +249,7 @@ public abstract class PriorityQueue<T> {
     }
     heap[i] = node;				  // install saved node
   }
-  
+
   /** This method returns the internal heap array as Object[].
    * @lucene.internal
    */

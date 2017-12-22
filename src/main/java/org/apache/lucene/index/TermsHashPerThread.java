@@ -19,10 +19,12 @@ package org.apache.lucene.index;
 
 import java.io.IOException;
 
+import com.google.j2objc.annotations.Weak;
+
 final class TermsHashPerThread extends InvertedDocConsumerPerThread {
 
   final TermsHash termsHash;
-  final TermsHashConsumerPerThread consumer;
+  @Weak final TermsHashConsumerPerThread consumer;
   final TermsHashPerThread nextPerThread;
 
   final CharBlockPool charPool;

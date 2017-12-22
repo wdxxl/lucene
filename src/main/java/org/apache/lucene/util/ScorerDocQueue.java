@@ -24,6 +24,8 @@ import java.io.IOException;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Scorer;
 
+import com.google.j2objc.annotations.Weak;
+
 /** A ScorerDocQueue maintains a partial ordering of its Scorers such that the
   least Scorer can always be found in constant time.  Put()'s and pop()'s
   require log(size) time. The ordering is by Scorer.doc().
@@ -31,24 +33,24 @@ import org.apache.lucene.search.Scorer;
  * @lucene.internal
  */
 public class ScorerDocQueue {  // later: SpansQueue for spans with doc and term positions
-  private final HeapedScorerDoc[] heap;
+  @Weak private final HeapedScorerDoc[] heap;
   private final int maxSize;
   private int size;
-  
+
   private class HeapedScorerDoc {
-    Scorer scorer;
+    @Weak Scorer scorer;
     int doc;
-    
+
     HeapedScorerDoc(Scorer s) { this(s, s.docID()); }
-    
+
     HeapedScorerDoc(Scorer scorer, int doc) {
       this.scorer = scorer;
       this.doc = doc;
     }
-    
+
     void adjust() { doc = scorer.docID(); }
   }
-  
+
   private HeapedScorerDoc topHSD; // same as heap[1], only for speed
 
   /** Create a ScorerDocQueue with a maximum size. */
@@ -110,7 +112,7 @@ public class ScorerDocQueue {  // later: SpansQueue for spans with doc and term 
     // assert size > 0;
     return topHSD.doc;
   }
-  
+
   public final float topScore() throws IOException {
     // assert size > 0;
     return topHSD.scorer.score();
@@ -123,7 +125,7 @@ public class ScorerDocQueue {  // later: SpansQueue for spans with doc and term 
   public final boolean topSkipToAndAdjustElsePop(int target) throws IOException {
     return checkAdjustElsePop(topHSD.scorer.advance(target) != DocIdSetIterator.NO_MORE_DOCS);
   }
-  
+
   private boolean checkAdjustElsePop(boolean cond) {
     if (cond) { // see also adjustTop
       topHSD.doc = topHSD.scorer.docID();
@@ -146,7 +148,7 @@ public class ScorerDocQueue {  // later: SpansQueue for spans with doc and term 
     popNoResult();
     return result;
   }
-  
+
   /** Removes the least scorer of the ScorerDocQueue in log(size) time.
    * Should not be used when the queue is empty.
    */
