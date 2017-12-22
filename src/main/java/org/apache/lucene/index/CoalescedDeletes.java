@@ -18,14 +18,16 @@ package org.apache.lucene.index;
  */
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.lucene.index.BufferedDeletesStream.QueryAndLimit;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.PriorityQueue;
-import org.apache.lucene.index.BufferedDeletesStream.QueryAndLimit;
+
+import com.google.j2objc.annotations.Weak;
 
 class CoalescedDeletes {
   final Map<Query,Integer> queries = new HashMap<Query,Integer>();
@@ -60,7 +62,7 @@ class CoalescedDeletes {
 
   public Iterable<QueryAndLimit> queriesIterable() {
     return new Iterable<QueryAndLimit>() {
-      
+
       public Iterator<QueryAndLimit> iterator() {
         return new Iterator<QueryAndLimit>() {
           private final Iterator<Map.Entry<Query,Integer>> iter = queries.entrySet().iterator();
@@ -81,15 +83,15 @@ class CoalescedDeletes {
       }
     };
   }
-  
+
   /** provides a merged view across multiple iterators */
   static Iterator<Term> mergedIterator(final List<Iterator<Term>> iterators) {
     return new Iterator<Term>() {
       Term current;
-      TermMergeQueue queue = new TermMergeQueue(iterators.size());
-      SubIterator[] top = new SubIterator[iterators.size()];
+      @Weak TermMergeQueue queue = new TermMergeQueue(iterators.size());
+      @Weak SubIterator[] top = new SubIterator[iterators.size()];
       int numTop;
-      
+
       {
         int index = 0;
         for (Iterator<Term> iterator : iterators) {
@@ -102,12 +104,12 @@ class CoalescedDeletes {
           }
         }
       }
-      
+
       public boolean hasNext() {
         if (queue.size() > 0) {
           return true;
         }
-        
+
         for (int i = 0; i < numTop; i++) {
           if (top[i].iterator.hasNext()) {
             return true;
@@ -115,11 +117,11 @@ class CoalescedDeletes {
         }
         return false;
       }
-      
+
       public Term next() {
         // restore queue
         pushTop();
-        
+
         // gather equal top fields
         if (queue.size() > 0) {
           pullTop();
@@ -128,11 +130,11 @@ class CoalescedDeletes {
         }
         return current;
       }
-      
+
       public void remove() {
         throw new UnsupportedOperationException();
       }
-      
+
       private void pullTop() {
         // extract all subs from the queue that have the same top term
         assert numTop == 0;
@@ -145,7 +147,7 @@ class CoalescedDeletes {
         }
         current = top[0].current;
       }
-      
+
       private void pushTop() {
         // call next() on each top, and put back into queue
         for (int i = 0; i < numTop; i++) {
@@ -161,13 +163,13 @@ class CoalescedDeletes {
       }
     };
   }
-  
+
   private static class SubIterator {
     Iterator<Term> iterator;
     Term current;
     int index;
   }
-  
+
   private static class TermMergeQueue extends PriorityQueue<SubIterator> {
     TermMergeQueue(int size) {
       initialize(size);

@@ -1,5 +1,7 @@
 package org.apache.lucene.util.fst;
 
+import java.io.IOException;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -18,12 +20,12 @@ package org.apache.lucene.util.fst;
  */
 
 import org.apache.lucene.util.ArrayUtil;
-import org.apache.lucene.util.RamUsageEstimator;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.IntsRef;
+import org.apache.lucene.util.RamUsageEstimator;
 import org.apache.lucene.util.fst.FST.INPUT_TYPE; // javadoc
 
-import java.io.IOException;
+import com.google.j2objc.annotations.Weak;
 
 /**
  * Builds a compact FST (maps an IntsRef term to an arbitrary
@@ -71,11 +73,11 @@ public class Builder<T> {
   // in build performance on 9.8M Wikipedia terms; so we
   // left this as an array:
   // current "frontier"
-  private UnCompiledNode<T>[] frontier;
+  @Weak private UnCompiledNode<T>[] frontier;
 
   /**
    * Instantiates an FST/FSA builder without any pruning. A shortcut
-   * to {@link #Builder(FST.INPUT_TYPE, int, int, boolean, boolean, int, Outputs)} with 
+   * to {@link #Builder(FST.INPUT_TYPE, int, int, boolean, boolean, int, Outputs)} with
    * pruning options turned off.
    */
   public Builder(FST.INPUT_TYPE inputType, Outputs<T> outputs) {
@@ -85,25 +87,25 @@ public class Builder<T> {
   /**
    * Instantiates an FST/FSA builder with all the possible tuning and construction
    * tweaks. Read parameter documentation carefully.
-   * 
-   * @param inputType 
+   *
+   * @param inputType
    *    The input type (transition labels). Can be anything from {@link INPUT_TYPE}
-   *    enumeration. Shorter types will consume less memory. Strings (character sequences) are 
-   *    represented as {@link INPUT_TYPE#BYTE4} (full unicode codepoints). 
-   *     
+   *    enumeration. Shorter types will consume less memory. Strings (character sequences) are
+   *    represented as {@link INPUT_TYPE#BYTE4} (full unicode codepoints).
+   *
    * @param minSuffixCount1
    *    If pruning the input graph during construction, this threshold is used for telling
    *    if a node is kept or pruned. If transition_count(node) &gt;= minSuffixCount1, the node
-   *    is kept. 
-   *    
+   *    is kept.
+   *
    * @param minSuffixCount2
-   *    (Note: only Mike McCandless knows what this one is really doing...) 
-   * 
-   * @param doShareSuffix 
+   *    (Note: only Mike McCandless knows what this one is really doing...)
+   *
+   * @param doShareSuffix
    *    If <code>true</code>, the shared suffixes will be compacted into unique paths.
    *    This requires an additional hash map for lookups in memory. Setting this parameter to
    *    <code>false</code> creates a single path for all input sequences. This will result in a larger
-   *    graph, but may require less memory and will speed up construction.  
+   *    graph, but may require less memory and will speed up construction.
    *
    * @param doShareNonSingletonNodes
    *    Only used if doShareSuffix is true.  Set this to
@@ -189,7 +191,7 @@ public class Builder<T> {
         // prune if parent's inputCount is less than suffixMinCount2
         if (parent.inputCount < minSuffixCount2 || minSuffixCount2 == 1 && parent.inputCount == 1) {
           // my parent, about to be compiled, doesn't make the cut, so
-          // I'm definitely pruned 
+          // I'm definitely pruned
 
           // if pruneCount2 is 1, we keep only up
           // until the 'distinguished edge', ie we keep only the
@@ -201,7 +203,7 @@ public class Builder<T> {
           doPrune = true;
         } else {
           // my parent, about to be compiled, does make the cut, so
-          // I'm definitely not pruned 
+          // I'm definitely not pruned
           doPrune = false;
         }
         doCompile = true;
@@ -348,7 +350,7 @@ public class Builder<T> {
       pos2++;
     }
     final int prefixLenPlus1 = pos1+1;
-      
+
     if (frontier.length < input.length+1) {
       @SuppressWarnings("unchecked") final UnCompiledNode<T>[] next =
         new UnCompiledNode[ArrayUtil.oversize(input.length+1, RamUsageEstimator.NUM_BYTES_OBJECT_REF)];
@@ -450,10 +452,10 @@ public class Builder<T> {
 
     /*
     if (dedupHash != null) {
-      System.out.println("NH: " + dedupHash.count()); 
+      System.out.println("NH: " + dedupHash.count());
     }
     */
-    
+
     return fst;
   }
 
@@ -498,7 +500,7 @@ public class Builder<T> {
   static final class UnCompiledNode<T> implements Node {
     final Builder<T> owner;
     int numArcs;
-    Arc<T>[] arcs;
+    @Weak Arc<T>[] arcs;
     T output;
     boolean isFinal;
     long inputCount;
@@ -531,7 +533,7 @@ public class Builder<T> {
       output = owner.NO_OUTPUT;
       inputCount = 0;
 
-      // We don't clear the depth here because it never changes 
+      // We don't clear the depth here because it never changes
       // for nodes on the frontier (even when reused).
     }
 

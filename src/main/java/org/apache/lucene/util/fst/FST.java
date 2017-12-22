@@ -25,6 +25,8 @@ import org.apache.lucene.util.ArrayUtil;
 import org.apache.lucene.util.CodecUtil;
 import org.apache.lucene.util.fst.Builder.UnCompiledNode;
 
+import com.google.j2objc.annotations.Weak;
+
 // TODO: if FST is pure prefix trie we can do a more compact
 // job, ie, once we are at a 'suffix only', just store the
 // completion labels as a string not as a series of arcs.
@@ -169,7 +171,7 @@ public class FST<T> {
     return (flags & bit) != 0;
   }
 
-  private final BytesWriter writer;
+  @Weak private final BytesWriter writer;
 
   // make a new empty FST, for building
   public FST(INPUT_TYPE inputType, Outputs<T> outputs) {
@@ -177,7 +179,7 @@ public class FST<T> {
     this.outputs = outputs;
     bytes = new byte[128];
     NO_OUTPUT = outputs.getNoOutput();
-    
+
     writer = new BytesWriter();
 
     emptyOutput = null;
@@ -347,7 +349,7 @@ public class FST<T> {
     final int v;
     if (inputType == INPUT_TYPE.BYTE1) {
       v = in.readByte()&0xFF;
-    } else { 
+    } else {
       v = in.readVInt();
     }
     return v;
@@ -395,7 +397,7 @@ public class FST<T> {
 
     nodeCount++;
     arcCount += node.numArcs;
-    
+
     final int lastArc = node.numArcs-1;
 
     int lastArcStart = writer.posWrite;
@@ -530,7 +532,7 @@ public class FST<T> {
   /** Follows the <code>follow</code> arc and reads the last
    *  arc of its target; this changes the provided
    *  <code>arc</code> (2nd arg) in-place and returns it.
-   * 
+   *
    * @return Returns the second argument
    * (<code>arc</code>). */
   public Arc<T> readLastTargetArc(Arc<T> follow, Arc<T> arc) throws IOException {
@@ -584,7 +586,7 @@ public class FST<T> {
    * Follow the <code>follow</code> arc and read the first arc of its target;
    * this changes the provided <code>arc</code> (2nd arg) in-place and returns
    * it.
-   * 
+   *
    * @return Returns the second argument (<code>arc</code>).
    */
   public Arc<T> readFirstTargetArc(Arc<T> follow, Arc<T> arc) throws IOException {
@@ -630,8 +632,8 @@ public class FST<T> {
   }
 
   /**
-   * Checks if <code>arc</code>'s target state is in expanded (or vector) format. 
-   * 
+   * Checks if <code>arc</code>'s target state is in expanded (or vector) format.
+   *
    * @return Returns <code>true</code> if <code>arc</code> points to a state in an
    * expanded array format.
    */
@@ -757,7 +759,7 @@ public class FST<T> {
         return arc;
       }
     }
- 
+
     if (labelToMatch == END_LABEL) {
       if (follow.isFinal()) {
         arc.output = follow.nextFinalOutput;
@@ -855,7 +857,7 @@ public class FST<T> {
     // 1+ in order to count the -1 implicit final node
     return 1+nodeCount;
   }
-  
+
   public int getArcCount() {
     return arcCount;
   }
@@ -863,24 +865,24 @@ public class FST<T> {
   public int getArcWithOutputCount() {
     return arcWithOutputCount;
   }
-  
+
   /**
    * Nodes will be expanded if their depth (distance from the root node) is
    * &lt;= this value and their number of arcs is &gt;=
    * {@link #FIXED_ARRAY_NUM_ARCS_SHALLOW}.
-   * 
+   *
    * <p>
    * Fixed array consumes more RAM but enables binary search on the arcs
    * (instead of a linear scan) on lookup by arc label.
-   * 
+   *
    * @return <code>true</code> if <code>node</code> should be stored in an
    *         expanded (array) form.
-   * 
+   *
    * @see #FIXED_ARRAY_NUM_ARCS_DEEP
    * @see Builder.UnCompiledNode#depth
    */
   private boolean shouldExpand(UnCompiledNode<T> node) {
-    return (node.depth <= FIXED_ARRAY_SHALLOW_DISTANCE && node.numArcs >= FIXED_ARRAY_NUM_ARCS_SHALLOW) || 
+    return (node.depth <= FIXED_ARRAY_SHALLOW_DISTANCE && node.numArcs >= FIXED_ARRAY_NUM_ARCS_SHALLOW) ||
             node.numArcs >= FIXED_ARRAY_NUM_ARCS_DEEP;
   }
 

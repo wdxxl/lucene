@@ -37,6 +37,8 @@ import org.apache.lucene.search.Weight;
 import org.apache.lucene.util.ArrayUtil;
 import org.apache.lucene.util.PriorityQueue;
 
+import com.google.j2objc.annotations.Weak;
+
 /** BlockGroupingCollector performs grouping with a
  *  single pass collector, as long as you are grouping by a
  *  doc block field, ie all documents sharing a given group
@@ -90,7 +92,7 @@ public class BlockGroupingCollector extends Collector {
   private int groupEndDocID;
   private DocIdSetIterator lastDocPerGroupBits;
   private Scorer scorer;
-  private final GroupQueue groupQueue;
+  @Weak private final GroupQueue groupQueue;
   private boolean groupCompetes;
 
   private final static class FakeScorer extends Scorer {
@@ -133,7 +135,7 @@ public class BlockGroupingCollector extends Collector {
     int count;
     int comparatorSlot;
   }
-  
+
   // Sorts by groupSort.  Not static -- uses comparators, reversed
   private final class GroupQueue extends PriorityQueue<OneGroup> {
 
@@ -264,7 +266,7 @@ public class BlockGroupingCollector extends Collector {
     // TODO: allow null groupSort to mean "by relevance",
     // and specialize it?
     this.groupSort = groupSort;
-    
+
     this.topNGroups = topNGroups;
 
     final SortField[] sortFields = groupSort.getSort();
@@ -431,7 +433,7 @@ public class BlockGroupingCollector extends Collector {
         for (FieldComparator fc : comparators) {
           fc.copy(bottomSlot, doc);
           fc.setBottom(bottomSlot);
-        }        
+        }
         topGroupDoc = doc;
       } else {
         // Compare to bottomSlot
@@ -452,14 +454,14 @@ public class BlockGroupingCollector extends Collector {
         }
 
         //System.out.println("       best w/in group!");
-        
+
         for (FieldComparator fc : comparators) {
           fc.copy(bottomSlot, doc);
           // Necessary because some comparators cache
           // details of bottom slot; this forces them to
           // re-cache:
           fc.setBottom(bottomSlot);
-        }        
+        }
         topGroupDoc = doc;
       }
     } else {

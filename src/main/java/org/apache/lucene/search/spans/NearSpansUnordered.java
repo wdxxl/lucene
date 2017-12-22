@@ -1,5 +1,12 @@
 package org.apache.lucene.search.spans;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -20,33 +27,28 @@ package org.apache.lucene.search.spans;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.util.PriorityQueue;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
+import com.google.j2objc.annotations.Weak;
 
 /**
  * Similar to {@link NearSpansOrdered}, but for the unordered case.
- * 
+ *
  * Expert:
  * Only public for subclassing.  Most implementations should not need this class
  */
 public class NearSpansUnordered extends Spans {
   private SpanNearQuery query;
 
-  private List<SpansCell> ordered = new ArrayList<SpansCell>();         // spans in query order
-  private Spans[] subSpans;  
+  @Weak private List<SpansCell> ordered = new ArrayList<SpansCell>();         // spans in query order
+  private Spans[] subSpans;
   private int slop;                               // from query
 
-  private SpansCell first;                        // linked list of spans
-  private SpansCell last;                         // sorted by doc only
+  @Weak private SpansCell first;                        // linked list of spans
+  @Weak private SpansCell last;                         // sorted by doc only
 
   private int totalLength;                        // sum of current lengths
 
-  private CellQueue queue;                        // sorted queue of spans
-  private SpansCell max;                          // max element in queue
+  @Weak private CellQueue queue;                        // sorted queue of spans
+  @Weak private SpansCell max;                          // max element in queue
 
   private boolean more = true;                    // true iff not done
   private boolean firstTime = true;               // true before first next()
@@ -55,7 +57,7 @@ public class NearSpansUnordered extends Spans {
     public CellQueue(int size) {
       initialize(size);
     }
-    
+
     @Override
     protected final boolean lessThan(SpansCell spans1, SpansCell spans2) {
       if (spans1.doc() == spans2.doc()) {
@@ -88,13 +90,13 @@ public class NearSpansUnordered extends Spans {
     public boolean skipTo(int target) throws IOException {
       return adjust(spans.skipTo(target));
     }
-    
+
     private boolean adjust(boolean condition) {
       if (length != -1) {
         totalLength -= length;  // subtract old length
       }
       if (condition) {
-        length = end() - start(); 
+        length = end() - start();
         totalLength += length; // add new length
 
         if (max == null || doc() > max.doc()
@@ -108,10 +110,10 @@ public class NearSpansUnordered extends Spans {
 
     @Override
     public int doc() { return spans.doc(); }
-    
+
     @Override
     public int start() { return spans.start(); }
-    
+
     @Override
     public int end() { return spans.end(); }
                     // TODO: Remove warning after API has been finalized
@@ -138,7 +140,7 @@ public class NearSpansUnordered extends Spans {
 
     SpanQuery[] clauses = query.getClauses();
     queue = new CellQueue(clauses.length);
-    subSpans = new Spans[clauses.length];    
+    subSpans = new Spans[clauses.length];
     for (int i = 0; i < clauses.length; i++) {
       SpansCell cell =
         new SpansCell(clauses[i].getSpans(reader), i);
@@ -192,7 +194,7 @@ public class NearSpansUnordered extends Spans {
       if (atMatch()) {
         return true;
       }
-      
+
       more = min().next();
       if (more) {
         queue.updateTop();                      // maintain queue
@@ -303,7 +305,7 @@ public class NearSpansUnordered extends Spans {
       addToList(queue.pop());
     }
   }
-  
+
   private void listToQueue() {
     queue.clear(); // rebuild queue
     for (SpansCell cell = first; cell != null; cell = cell.next) {

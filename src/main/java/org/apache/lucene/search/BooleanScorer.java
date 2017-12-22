@@ -23,6 +23,8 @@ import java.util.List;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.BooleanClause.Occur;
 
+import com.google.j2objc.annotations.Weak;
+
 /* Description from Doug Cutting (excerpted from
  * LUCENE-1483):
  *
@@ -57,23 +59,23 @@ import org.apache.lucene.search.BooleanClause.Occur;
  * updates for the optional terms. */
 
 final class BooleanScorer extends Scorer {
-  
+
   private static final class BooleanScorerCollector extends Collector {
     private BucketTable bucketTable;
     private int mask;
     private Scorer scorer;
-    
+
     public BooleanScorerCollector(int mask, BucketTable bucketTable) {
       this.mask = mask;
       this.bucketTable = bucketTable;
     }
-    
+
     @Override
     public void collect(final int doc) throws IOException {
       final BucketTable table = bucketTable;
       final int i = doc & BucketTable.MASK;
       final Bucket bucket = table.buckets[i];
-      
+
       if (bucket.doc != doc) {                    // invalid bucket
         bucket.doc = doc;                         // set doc
         bucket.score = scorer.score();            // initialize score
@@ -88,24 +90,24 @@ final class BooleanScorer extends Scorer {
         bucket.coord++;                           // increment coord
       }
     }
-    
+
     @Override
     public void setNextReader(IndexReader reader, int docBase) {
       // not needed by this implementation
     }
-    
+
     @Override
     public void setScorer(Scorer scorer) throws IOException {
       this.scorer = scorer;
     }
-    
+
     @Override
     public boolean acceptsDocsOutOfOrder() {
       return true;
     }
 
   }
-  
+
   // An internal class which is used in score(Collector, int) for setting the
   // current score. This is required since Collector exposes a setScorer method
   // and implementations that need the score will call scorer.score().
@@ -115,9 +117,9 @@ final class BooleanScorer extends Scorer {
     float score;
     int doc = NO_MORE_DOCS;
     int freq;
-    
+
     public BucketScorer(Weight weight) { super(weight); }
-    
+
     @Override
     public int advance(int target) throws IOException { return NO_MORE_DOCS; }
 
@@ -129,10 +131,10 @@ final class BooleanScorer extends Scorer {
 
     @Override
     public int nextDoc() throws IOException { return NO_MORE_DOCS; }
-    
+
     @Override
     public float score() throws IOException { return score; }
-    
+
   }
 
   static final class Bucket {
@@ -145,7 +147,7 @@ final class BooleanScorer extends Scorer {
     int coord;               // count of terms in score
     Bucket next;             // next valid bucket
   }
-  
+
   /** A simple hash table of document scores within a range. */
   static final class BucketTable {
     public static final int SIZE = 1 << 11;
@@ -153,7 +155,7 @@ final class BooleanScorer extends Scorer {
 
     final Bucket[] buckets = new Bucket[SIZE];
     Bucket first = null;                          // head of valid list
-  
+
     public BucketTable() {
       // Pre-fill to save the lazy init when collecting
       // each sub:
@@ -191,8 +193,8 @@ final class BooleanScorer extends Scorer {
       this.next = next;
     }
   }
-  
-  private SubScorer scorers = null;
+
+  @Weak private SubScorer scorers = null;
   private BucketTable bucketTable = new BucketTable();
   private final float[] coordFactors;
   // TODO: re-enable this if BQ ever sends us required clauses
@@ -204,7 +206,7 @@ final class BooleanScorer extends Scorer {
 
   // Any time a prohibited clause matches we set bit 0:
   private static final int PROHIBITED_MASK = 1;
-  
+
   BooleanScorer(Weight weight, boolean disableCoord, Similarity similarity, int minNrShouldMatch,
       List<Scorer> optionalScorers, List<Scorer> prohibitedScorers, int maxCoord) throws IOException {
     super(weight);
@@ -217,7 +219,7 @@ final class BooleanScorer extends Scorer {
         }
       }
     }
-    
+
     if (prohibitedScorers != null && prohibitedScorers.size() > 0) {
       for (Scorer scorer : prohibitedScorers) {
         if (scorer.nextDoc() != NO_MORE_DOCS) {
@@ -228,7 +230,7 @@ final class BooleanScorer extends Scorer {
 
     coordFactors = new float[optionalScorers.size() + 1];
     for (int i = 0; i < coordFactors.length; i++) {
-      coordFactors[i] = disableCoord ? 1.0f : similarity.coord(i, maxCoord); 
+      coordFactors[i] = disableCoord ? 1.0f : similarity.coord(i, maxCoord);
     }
   }
 
@@ -245,8 +247,8 @@ final class BooleanScorer extends Scorer {
     collector.setScorer(bs);
     do {
       bucketTable.first = null;
-      
-      while (current != null) {         // more queued 
+
+      while (current != null) {         // more queued
 
         // check prohibited & required
         if ((current.bits & PROHIBITED_MASK) == 0) {
@@ -254,8 +256,8 @@ final class BooleanScorer extends Scorer {
           // TODO: re-enable this if BQ ever sends us required
           // clauses
           //&& (current.bits & requiredMask) == requiredMask) {
-          
-          // TODO: can we remove this?  
+
+          // TODO: can we remove this?
           if (current.doc >= max){
             tmp = current;
             current = current.next;
@@ -263,7 +265,7 @@ final class BooleanScorer extends Scorer {
             bucketTable.first = tmp;
             continue;
           }
-          
+
           if (current.coord >= minNrShouldMatch) {
             bs.score = current.score * coordFactors[current.coord];
             bs.doc = current.doc;
@@ -271,10 +273,10 @@ final class BooleanScorer extends Scorer {
             collector.collect(current.doc);
           }
         }
-        
+
         current = current.next;         // pop the queue
       }
-      
+
       if (bucketTable.first != null){
         current = bucketTable.first;
         bucketTable.first = current.next;
@@ -291,12 +293,12 @@ final class BooleanScorer extends Scorer {
         }
       }
       current = bucketTable.first;
-      
+
     } while (current != null || more);
 
     return false;
   }
-  
+
   @Override
   public int advance(int target) throws IOException {
     throw new UnsupportedOperationException();
@@ -321,7 +323,7 @@ final class BooleanScorer extends Scorer {
   public void score(Collector collector) throws IOException {
     score(collector, Integer.MAX_VALUE, -1);
   }
-  
+
   @Override
   public String toString() {
     StringBuilder buffer = new StringBuilder();
@@ -333,7 +335,7 @@ final class BooleanScorer extends Scorer {
     buffer.append(")");
     return buffer.toString();
   }
-  
+
   @Override
   protected void visitSubScorers(Query parent, Occur relationship, ScorerVisitor<Query, Query, Scorer> visitor) {
     super.visitSubScorers(parent, relationship, visitor);
