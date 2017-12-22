@@ -1,5 +1,8 @@
 package org.apache.lucene.search;
 
+import java.io.IOException;
+import java.util.Set;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -21,8 +24,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.util.ToStringUtils;
 
-import java.io.IOException;
-import java.util.Set;
+import com.google.j2objc.annotations.Weak;
 
 
 /**
@@ -40,8 +42,8 @@ import java.util.Set;
 public class FilteredQuery
 extends Query {
 
-  Query query;
-  Filter filter;
+  @Weak Query query;
+  @Weak Filter filter;
 
   /**
    * Constructs a new query which applies a filter to the results of the original query.
@@ -64,22 +66,22 @@ extends Query {
     final Similarity similarity = query.getSimilarity(searcher);
     return new Weight() {
       private float value;
-        
+
       // pass these methods through to enclosed query's weight
       @Override
       public float getValue() { return value; }
-      
+
       @Override
       public boolean scoresDocsOutOfOrder() {
         return false;
       }
 
-      public float sumOfSquaredWeights() throws IOException { 
+      public float sumOfSquaredWeights() throws IOException {
         return weight.sumOfSquaredWeights() * getBoost() * getBoost(); // boost sub-weight
       }
 
       @Override
-      public void normalize (float v) { 
+      public void normalize (float v) {
         weight.normalize(v * getBoost()); // incorporate boost
         value = weight.getValue();
       }
@@ -118,7 +120,7 @@ extends Query {
       }
     };
   }
-  
+
   /** Hackidy-Häck-Hack for backwards compatibility, as we cannot change IndexSearcher API in 3.x, but still want
    * to move the searchWithFilter implementation to this class: to enable access to our scorer() implementation
    * from IndexSearcher without instantiating a separate {@link Weight}, we make the inner implementation accessible.
@@ -138,7 +140,7 @@ extends Query {
       // this means the filter does not accept any documents.
       return null;
     }
-    
+
     final DocIdSetIterator filterIter = filterDocIdSet.iterator();
     if (filterIter == null) {
       // this means the filter does not accept any documents.
@@ -149,7 +151,7 @@ extends Query {
     final Scorer scorer = weight.scorer(indexReader, true, false);
     return (scorer == null) ? null : new Scorer(similarity, wrapperWeight) {
       private int scorerDoc = -1, filterDoc = -1;
-      
+
       // optimization: we are topScorer and collect directly using short-circuited algo
       @Override
       public void score(Collector collector) throws IOException {
@@ -174,7 +176,7 @@ extends Query {
           }
         }
       }
-      
+
       private int advanceToNextCommonDoc() throws IOException {
         for (;;) {
           if (scorerDoc < filterDoc) {
@@ -192,7 +194,7 @@ extends Query {
         filterDoc = filterIter.nextDoc();
         return advanceToNextCommonDoc();
       }
-      
+
       @Override
       public int advance(int target) throws IOException {
         if (target > filterDoc) {
@@ -205,7 +207,7 @@ extends Query {
       public int docID() {
         return scorerDoc;
       }
-      
+
       @Override
       public float score() throws IOException {
         return scorer.score();

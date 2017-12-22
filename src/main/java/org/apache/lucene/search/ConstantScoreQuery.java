@@ -1,5 +1,8 @@
 package org.apache.lucene.search;
 
+import java.io.IOException;
+import java.util.Set;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -21,8 +24,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.util.ToStringUtils;
 
-import java.io.IOException;
-import java.util.Set;
+import com.google.j2objc.annotations.Weak;
 
 /**
  * A query that wraps another query or a filter and simply returns a constant score equal to the
@@ -36,8 +38,8 @@ import java.util.Set;
  * CachingWrapperFilter.DeletesMode#DYNAMIC}).
  */
 public class ConstantScoreQuery extends Query {
-  protected final Filter filter;
-  protected final Query query;
+  @Weak protected final Filter filter;
+  @Weak protected final Query query;
 
   /** Strips off scores from the passed in Query. The hits will get a constant score
    * dependent on the boost factor of this query. */
@@ -99,7 +101,7 @@ public class ConstantScoreQuery extends Query {
     private final Similarity similarity;
     private float queryNorm;
     private float queryWeight;
-    
+
     public ConstantWeight(Searcher searcher) throws IOException {
       this.similarity = getSimilarity(searcher);
       this.innerWeight = (query == null) ? null : query.createWeight(searcher);
@@ -149,7 +151,7 @@ public class ConstantScoreQuery extends Query {
         return null;
       return new ConstantScorer(similarity, disi, this);
     }
-    
+
     @Override
     public boolean scoresDocsOutOfOrder() {
       return (innerWeight != null) ? innerWeight.scoresDocsOutOfOrder() : false;
@@ -190,7 +192,7 @@ public class ConstantScoreQuery extends Query {
     public int nextDoc() throws IOException {
       return docIdSetIterator.nextDoc();
     }
-    
+
     @Override
     public int docID() {
       return docIdSetIterator.docID();
@@ -205,7 +207,7 @@ public class ConstantScoreQuery extends Query {
     public int advance(int target) throws IOException {
       return docIdSetIterator.advance(target);
     }
-    
+
     private Collector wrapCollector(final Collector collector) {
       return new Collector() {
         @Override
@@ -214,17 +216,17 @@ public class ConstantScoreQuery extends Query {
           collector.setScorer(new ConstantScorer(ConstantScorer.this.getSimilarity(),
             scorer, ConstantScorer.this.weight));
         }
-        
+
         @Override
         public void collect(int doc) throws IOException {
           collector.collect(doc);
         }
-        
+
         @Override
         public void setNextReader(IndexReader reader, int docBase) throws IOException {
           collector.setNextReader(reader, docBase);
         }
-        
+
         @Override
         public boolean acceptsDocsOutOfOrder() {
           return collector.acceptsDocsOutOfOrder();
@@ -276,7 +278,7 @@ public class ConstantScoreQuery extends Query {
       return false;
     if (o instanceof ConstantScoreQuery) {
       final ConstantScoreQuery other = (ConstantScoreQuery) o;
-      return 
+      return
         ((this.filter == null) ? other.filter == null : this.filter.equals(other.filter)) &&
         ((this.query == null) ? other.query == null : this.query.equals(other.query));
     }
