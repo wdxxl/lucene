@@ -22,6 +22,8 @@ import java.io.IOException;
 
 import org.apache.lucene.util.ThreadInterruptedException;
 
+import com.google.j2objc.annotations.Weak;
+
 /**
  * Utility class that runs a reopen thread to periodically
  * reopen the NRT searchers in the provided {@link
@@ -31,7 +33,7 @@ import org.apache.lucene.util.ThreadInterruptedException;
  *
  * <pre>
  *   ... open your own writer ...
- * 
+ *
  *   NRTManager manager = new NRTManager(writer);
  *
  *   // Refreshes searcher every 5 seconds when nobody is waiting, and up to 100 msec delay
@@ -61,7 +63,7 @@ import org.apache.lucene.util.ThreadInterruptedException;
  * <pre>
  *   // ... or updateDocument, deleteDocuments, etc:
  *   long gen = manager.addDocument(...);
- *   
+ *
  *   // Returned searcher is guaranteed to reflect the just added document
  *   IndexSearcher searcher = manager.get(gen);
  *   try {
@@ -73,8 +75,8 @@ import org.apache.lucene.util.ThreadInterruptedException;
  *
  *
  * When you are done be sure to close both the manager and the reopen thrad:
- * <pre> 
- *   reopenThread.close();       
+ * <pre>
+ *   reopenThread.close();
  *   manager.close();
  * </pre>
  *
@@ -82,8 +84,8 @@ import org.apache.lucene.util.ThreadInterruptedException;
  */
 
 public class NRTManagerReopenThread extends Thread implements NRTManager.WaitingListener, Closeable {
-  
-  private final NRTManager manager;
+
+  @Weak private final NRTManager manager;
   private final long targetMaxStaleNS;
   private final long targetMinStaleNS;
   private boolean finish;

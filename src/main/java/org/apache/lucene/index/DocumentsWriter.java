@@ -39,6 +39,8 @@ import org.apache.lucene.util.BitVector;
 import org.apache.lucene.util.RamUsageEstimator;
 import org.apache.lucene.util.ThreadInterruptedException;
 
+import com.google.j2objc.annotations.Weak;
+
 
 /**
  * This class accepts multiple added documents and directly
@@ -109,8 +111,8 @@ import org.apache.lucene.util.ThreadInterruptedException;
 
 final class DocumentsWriter {
   final AtomicLong bytesUsed = new AtomicLong(0);
-  IndexWriter writer;
-  Directory directory;
+  @Weak IndexWriter writer;
+  @Weak Directory directory;
 
   String segment;                         // Current segment we are working on
 
@@ -119,13 +121,13 @@ final class DocumentsWriter {
 
   // Max # ThreadState instances; if there are more threads
   // than this they share ThreadStates
-  private DocumentsWriterThreadState[] threadStates = new DocumentsWriterThreadState[0];
-  private final HashMap<Thread,DocumentsWriterThreadState> threadBindings = new HashMap<Thread,DocumentsWriterThreadState>();
+  @Weak private DocumentsWriterThreadState[] threadStates = new DocumentsWriterThreadState[0];
+  @Weak private final HashMap<Thread,DocumentsWriterThreadState> threadBindings = new HashMap<Thread,DocumentsWriterThreadState>();
 
   boolean bufferIsFull;                   // True when it's time to write segment
   private boolean aborting;               // True if an abort is pending
 
-  PrintStream infoStream;
+  @Weak PrintStream infoStream;
   int maxFieldLength = IndexWriter.DEFAULT_MAX_FIELD_LENGTH;
   Similarity similarity;
 
@@ -134,8 +136,8 @@ final class DocumentsWriter {
   private final int maxThreadStates;
 
   // Deletes for our still-in-RAM (to be flushed next) segment
-  private BufferedDeletes pendingDeletes = new BufferedDeletes();
-  
+  @Weak private BufferedDeletes pendingDeletes = new BufferedDeletes();
+
   static class DocState {
     DocumentsWriter docWriter;
     Analyzer analyzer;
@@ -185,7 +187,7 @@ final class DocumentsWriter {
    * RAMFile buffer for DocWriters.
    */
   class PerDocBuffer extends RAMFile {
-    
+
     /**
      * Allocate bytes used from shared pool.
      */
@@ -194,33 +196,33 @@ final class DocumentsWriter {
       assert size == PER_DOC_BLOCK_SIZE;
       return perDocAllocator.getByteBlock();
     }
-    
+
     /**
      * Recycle the bytes used.
      */
     synchronized void recycle() {
       if (buffers.size() > 0) {
         setLength(0);
-        
+
         // Recycle the blocks
         perDocAllocator.recycleByteBlocks(buffers);
         buffers.clear();
         sizeInBytes = 0;
-        
+
         assert numBuffers() == 0;
       }
     }
   }
-  
+
   /**
    * The IndexingChain must define the {@link #getChain(DocumentsWriter)} method
    * which returns the DocConsumer that the DocumentsWriter calls to process the
-   * documents. 
+   * documents.
    */
   abstract static class IndexingChain {
     abstract DocConsumer getChain(DocumentsWriter documentsWriter);
   }
-  
+
   static final IndexingChain defaultIndexingChain = new IndexingChain() {
 
     @Override
@@ -261,13 +263,13 @@ final class DocumentsWriter {
   // How much RAM we can use before flushing.  This is 0 if
   // we are flushing by doc count instead.
 
-  private final IndexWriterConfig config;
+  @Weak private final IndexWriterConfig config;
 
   private boolean closed;
   private final FieldInfos fieldInfos;
 
-  private final BufferedDeletesStream bufferedDeletesStream;
-  private final IndexWriter.FlushControl flushControl;
+  @Weak private final BufferedDeletesStream bufferedDeletesStream;
+  @Weak private final IndexWriter.FlushControl flushControl;
 
   DocumentsWriter(IndexWriterConfig config, Directory directory, IndexWriter writer, FieldInfos fieldInfos, BufferedDeletesStream bufferedDeletesStream) throws IOException {
     this.directory = directory;
@@ -296,7 +298,7 @@ final class DocumentsWriter {
     // which is risky (likely would hit some other
     // confounding exception).
   }
-  
+
   boolean deleteQueries(Query... queries) {
     final boolean doFlush = flushControl.waitUpdate(0, queries.length);
     synchronized(this) {
@@ -306,15 +308,15 @@ final class DocumentsWriter {
     }
     return doFlush;
   }
-  
-  boolean deleteQuery(Query query) { 
+
+  boolean deleteQuery(Query query) {
     final boolean doFlush = flushControl.waitUpdate(0, 1);
     synchronized(this) {
       pendingDeletes.addQuery(query, numDocs);
     }
     return doFlush;
   }
-  
+
   boolean deleteTerms(Term... terms) {
     final boolean doFlush = flushControl.waitUpdate(0, terms.length);
     synchronized(this) {
@@ -413,24 +415,24 @@ final class DocumentsWriter {
         if (infoStream != null) {
           message("docWriter: abort waitIdle done");
         }
-        
+
         assert 0 == waitQueue.numWaiting: "waitQueue.numWaiting=" + waitQueue.numWaiting;
         waitQueue.waitingBytes = 0;
-        
+
         pendingDeletes.clear();
-        
+
         for (DocumentsWriterThreadState threadState : threadStates) {
           try {
             threadState.consumer.abort();
           } catch (Throwable t) {
           }
         }
-          
+
         try {
           consumer.abort();
         } catch (Throwable t) {
         }
-        
+
         // Reset all postings data
         doAfterFlush();
       }
@@ -718,7 +720,7 @@ final class DocumentsWriter {
 
     // Next, wait until my thread state is idle (in case
     // it's shared with other threads), and no flush/abort
-    // pending 
+    // pending
     waitReady(state);
 
     // Allocate segment name if this is the first doc since
@@ -739,11 +741,11 @@ final class DocumentsWriter {
     state.isIdle = false;
     return state;
   }
-  
+
   boolean addDocument(Document doc, Analyzer analyzer) throws CorruptIndexException, IOException {
     return updateDocument(doc, analyzer, null);
   }
-  
+
   boolean updateDocument(Document doc, Analyzer analyzer, Term delTerm)
     throws CorruptIndexException, IOException {
 
@@ -789,7 +791,7 @@ final class DocumentsWriter {
 
           state.isIdle = true;
           notifyAll();
-            
+
           if (aborting) {
             abort();
           } else {
@@ -842,7 +844,7 @@ final class DocumentsWriter {
       docState.analyzer = analyzer;
       // Assign next docID from our block:
       docState.docID = docID++;
-      
+
       boolean success = false;
       try {
         // This call is not synchronized and does all the
@@ -1098,7 +1100,7 @@ final class DocumentsWriter {
     }
 
     ArrayList<byte[]> freeByteBlocks = new ArrayList<byte[]>();
-    
+
     /* Allocate another byte[] from the shared pool */
     @Override
     byte[] getByteBlock() {
@@ -1175,11 +1177,11 @@ final class DocumentsWriter {
     }
   }
 
-  ByteBlockAllocator byteBlockAllocator = new ByteBlockAllocator(BYTE_BLOCK_SIZE);
+  @Weak ByteBlockAllocator byteBlockAllocator = new ByteBlockAllocator(BYTE_BLOCK_SIZE);
 
   final static int PER_DOC_BLOCK_SIZE = 1024;
 
-  final ByteBlockAllocator perDocAllocator = new ByteBlockAllocator(PER_DOC_BLOCK_SIZE);
+  @Weak final ByteBlockAllocator perDocAllocator = new ByteBlockAllocator(PER_DOC_BLOCK_SIZE);
 
 
   /* Initial chunk size of the shared char[] blocks used to
@@ -1222,10 +1224,10 @@ final class DocumentsWriter {
 
   /* We have four pools of RAM: Postings, byte blocks
    * (holds freq/prox posting data), char blocks (holds
-   * characters in the term) and per-doc buffers (stored fields/term vectors).  
-   * Different docs require varying amount of storage from 
+   * characters in the term) and per-doc buffers (stored fields/term vectors).
+   * Different docs require varying amount of storage from
    * these four classes.
-   * 
+   *
    * For example, docs with many unique single-occurrence
    * short terms will use up the Postings RAM and hardly any
    * of the other two.  Whereas docs with very large terms
@@ -1252,7 +1254,7 @@ final class DocumentsWriter {
       if (ramBufferSize == IndexWriterConfig.DISABLE_AUTO_FLUSH || bufferIsFull) {
         return;
       }
-    
+
       doBalance = bytesUsed() + deletesRAMUsed >= ramBufferSize;
     }
 
@@ -1280,12 +1282,12 @@ final class DocumentsWriter {
       final long freeLevel = (long) (0.95 * ramBufferSize);
 
       while(bytesUsed()+deletesRAMUsed > freeLevel) {
-      
+
         synchronized(this) {
-          if (0 == perDocAllocator.freeByteBlocks.size() 
-              && 0 == byteBlockAllocator.freeByteBlocks.size() 
-              && 0 == freeCharBlocks.size() 
-              && 0 == freeIntBlocks.size() 
+          if (0 == perDocAllocator.freeByteBlocks.size()
+              && 0 == byteBlockAllocator.freeByteBlocks.size()
+              && 0 == freeCharBlocks.size()
+              && 0 == freeIntBlocks.size()
               && !any) {
             // Nothing else to free -- must flush now.
             bufferIsFull = bytesUsed()+deletesRAMUsed > ramBufferSize;
@@ -1340,7 +1342,7 @@ final class DocumentsWriter {
     }
   }
 
-  final WaitQueue waitQueue = new WaitQueue();
+  @Weak final WaitQueue waitQueue = new WaitQueue();
 
   private class WaitQueue {
     DocWriter[] waiting;
@@ -1467,7 +1469,7 @@ final class DocumentsWriter {
         numWaiting++;
         waitingBytes += doc.sizeInBytes();
       }
-      
+
       return doPause();
     }
   }

@@ -34,10 +34,11 @@ import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexReader; // javadocs
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.search.IndexSearcher; // javadocs
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.IOUtils;
 import org.apache.lucene.util.ThreadInterruptedException;
+
+import com.google.j2objc.annotations.Weak;
 
 /**
  * Utility class to manage sharing near-real-time searchers
@@ -65,7 +66,7 @@ public class NRTManager implements Closeable {
 
   /**
    * Create new NRTManager.
-   * 
+   *
    *  @param writer IndexWriter to open near-real-time
    *         readers
    *  @param warmer optional {@link SearcherWarmer}.  Pass
@@ -84,7 +85,7 @@ public class NRTManager implements Closeable {
 
   /**
    * Create new NRTManager.
-   * 
+   *
    *  @param writer IndexWriter to open near-real-time
    *         readers
    *  @param es optional ExecutorService so different segments can
@@ -123,7 +124,7 @@ public class NRTManager implements Closeable {
     }
     indexingGen = new AtomicLong(1);
   }
-  
+
   /** NRTManager invokes this interface to notify it when a
    *  caller is waiting for a specific generation searcher
    *  to be visible. */
@@ -240,7 +241,7 @@ public class NRTManager implements Closeable {
    * than the given target generation this method will block until the
    * correspondent {@link SearcherManager} is reopened by another thread via
    * {@link #maybeReopen(boolean)} or until the {@link NRTManager} is closed.
-   * 
+   *
    * @param targetGen the generation to wait for
    * @param requireDeletes <code>true</code> iff the generation requires deletes to be applied otherwise <code>false</code>
    * @return the {@link SearcherManager} with the given target generation
@@ -259,7 +260,7 @@ public class NRTManager implements Closeable {
    * <p>
    * NOTE: if the waiting time elapses before the requested target generation is
    * available the latest {@link SearcherManager} is returned instead.
-   * 
+   *
    * @param targetGen
    *          the generation to wait for
    * @param requireDeletes
@@ -300,7 +301,7 @@ public class NRTManager implements Closeable {
     }
     return getSearcherManager(requireDeletes);
   }
-  
+
   private boolean waitOnGenCondition(long time, TimeUnit unit)
       throws InterruptedException {
     assert reopenLock.isHeldByCurrentThread();
@@ -351,7 +352,7 @@ public class NRTManager implements Closeable {
    * Close this NRTManager to future searching. Any searches still in process in
    * other threads won't be affected, and they should still call
    * {@link SearcherManager#release(IndexSearcher)} after they are done.
-   * 
+   *
    * <p>
    * <b>NOTE</b>: caller must separately close the writer.
    */
@@ -386,11 +387,11 @@ public class NRTManager implements Closeable {
       }
     }
   }
-  
+
   static final class SearcherManagerRef implements Closeable {
     final boolean applyDeletes;
     volatile long generation;
-    final SearcherManager manager;
+    @Weak final SearcherManager manager;
 
     SearcherManagerRef(boolean applyDeletes, long generation, SearcherManager manager) {
       super();
@@ -398,7 +399,7 @@ public class NRTManager implements Closeable {
       this.generation = generation;
       this.manager = manager;
     }
-    
+
     public void close() throws IOException {
       generation = MAX_SEARCHER_GEN; // max it out to make sure nobody can wait on another gen
       manager.close();
