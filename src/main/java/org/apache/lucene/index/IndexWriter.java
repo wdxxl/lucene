@@ -31,30 +31,29 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.LimitTokenCountAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.index.PayloadProcessorProvider.DirPayloadProcessor;
-import org.apache.lucene.search.Similarity;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.Similarity;
 import org.apache.lucene.store.AlreadyClosedException;
 import org.apache.lucene.store.BufferedIndexInput;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.Lock;
 import org.apache.lucene.store.LockObtainFailedException;
 import org.apache.lucene.util.Constants;
+import org.apache.lucene.util.MapBackedSet;
 import org.apache.lucene.util.StringHelper;
 import org.apache.lucene.util.ThreadInterruptedException;
+import org.apache.lucene.util.TwoPhaseCommit;
 import org.apache.lucene.util.Version;
 
 import com.google.j2objc.annotations.Weak;
-
-import org.apache.lucene.util.MapBackedSet;
-import org.apache.lucene.util.TwoPhaseCommit;
 
 /**
   An <code>IndexWriter</code> creates and maintains an index.
@@ -282,13 +281,13 @@ public class IndexWriter implements Closeable, TwoPhaseCommit {
   final SegmentInfos segmentInfos = new SegmentInfos();       // the segments
 
   private DocumentsWriter docWriter;
-  private IndexFileDeleter deleter;
+  @Weak private IndexFileDeleter deleter;
 
   // used by forceMerge to note those needing merging
   private Map<SegmentInfo,Boolean> segmentsToMerge = new HashMap<SegmentInfo,Boolean>();
   private int mergeMaxNumSegments;
 
-  private Lock writeLock;
+  @Weak private Lock writeLock;
 
   private volatile boolean closed;
   private volatile boolean closing;
@@ -325,7 +324,7 @@ public class IndexWriter implements Closeable, TwoPhaseCommit {
 
   // The instance that was passed to the constructor. It is saved only in order
   // to allow users to query an IndexWriter settings.
-  private final IndexWriterConfig config;
+  @Weak private final IndexWriterConfig config;
 
   // The PayloadProcessorProvider to use when segments are merged
   private PayloadProcessorProvider payloadProcessorProvider;

@@ -21,17 +21,19 @@ import java.io.IOException;
 
 import org.apache.lucene.index.PayloadProcessorProvider.DirPayloadProcessor;
 
+import com.google.j2objc.annotations.Weak;
+
 final class SegmentMergeInfo {
   Term term;
   int base;
   int ord;  // the position of the segment in a MultiReader
-  TermEnum termEnum;
+  @Weak TermEnum termEnum;
   IndexReader reader;
   int delCount;
   private TermPositions postings;  // use getPositions()
   private int[] docMap;  // use getDocMap()
   DirPayloadProcessor dirPayloadProcessor;
-  
+
   SegmentMergeInfo(int b, TermEnum te, IndexReader r)
     throws IOException {
     base = b;
@@ -44,7 +46,7 @@ final class SegmentMergeInfo {
   int[] getDocMap() {
     if (docMap == null) {
       delCount = 0;
-      // build array which maps document numbers around deletions 
+      // build array which maps document numbers around deletions
       if (reader.hasDeletions()) {
         int maxDoc = reader.maxDoc();
         docMap = new int[maxDoc];

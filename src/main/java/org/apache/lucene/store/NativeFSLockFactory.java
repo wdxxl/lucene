@@ -1,5 +1,9 @@
 package org.apache.lucene.store;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -19,10 +23,9 @@ package org.apache.lucene.store;
 
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import java.io.File;
-import java.io.RandomAccessFile;
-import java.io.IOException;
 import java.util.HashSet;
+
+import com.google.j2objc.annotations.Weak;
 
 /**
  * <p>Implements {@link LockFactory} using native OS file
@@ -40,7 +43,7 @@ import java.util.HashSet;
  * <p>The primary benefit of {@link NativeFSLockFactory} is
  * that lock files will be properly removed (by the OS) if
  * the JVM has an abnormal exit.</p>
- * 
+ *
  * <p>Note that, unlike {@link SimpleFSLockFactory}, the existence of
  * leftover lock files in the filesystem on exiting the JVM
  * is fine because the OS will free the locks held against
@@ -80,7 +83,7 @@ public class NativeFSLockFactory extends FSLockFactory {
   /**
    * Create a NativeFSLockFactory instance, storing lock
    * files into the specified lockDir:
-   * 
+   *
    * @param lockDir where lock files are created.
    */
   public NativeFSLockFactory(File lockDir) throws IOException {
@@ -101,7 +104,7 @@ public class NativeFSLockFactory extends FSLockFactory {
     // they are locked, but, still do this in case people
     // really want to see the files go away:
     if (lockDir.exists()) {
-      
+
       // Try to release the lock first - if it's held by another process, this
       // method should not silently fail.
       // NOTE: makeLock fixes the lock name by prefixing it w/ lockPrefix.
@@ -112,7 +115,7 @@ public class NativeFSLockFactory extends FSLockFactory {
       if (lockPrefix != null) {
         lockName = lockPrefix + "-" + lockName;
       }
-      
+
       // As mentioned above, we don't care if the deletion of the file failed.
       new File(lockDir, lockName).delete();
     }
@@ -121,7 +124,7 @@ public class NativeFSLockFactory extends FSLockFactory {
 
 class NativeFSLock extends Lock {
 
-  private RandomAccessFile f;
+  @Weak private RandomAccessFile f;
   private FileChannel channel;
   private FileLock lock;
   private File path;
@@ -130,20 +133,20 @@ class NativeFSLock extends Lock {
   /*
    * The javadocs for FileChannel state that you should have
    * a single instance of a FileChannel (per JVM) for all
-   * locking against a given file (locks are tracked per 
-   * FileChannel instance in Java 1.4/1.5). Even using the same 
-   * FileChannel instance is not completely thread-safe with Java 
-   * 1.4/1.5 though. To work around this, we have a single (static) 
-   * HashSet that contains the file paths of all currently 
-   * locked locks.  This protects against possible cases 
-   * where different Directory instances in one JVM (each 
-   * with their own NativeFSLockFactory instance) have set 
-   * the same lock dir and lock prefix. However, this will not 
-   * work when LockFactorys are created by different 
-   * classloaders (eg multiple webapps). 
-   * 
-   * TODO: Java 1.6 tracks system wide locks in a thread safe manner 
-   * (same FileChannel instance or not), so we may want to 
+   * locking against a given file (locks are tracked per
+   * FileChannel instance in Java 1.4/1.5). Even using the same
+   * FileChannel instance is not completely thread-safe with Java
+   * 1.4/1.5 though. To work around this, we have a single (static)
+   * HashSet that contains the file paths of all currently
+   * locked locks.  This protects against possible cases
+   * where different Directory instances in one JVM (each
+   * with their own NativeFSLockFactory instance) have set
+   * the same lock dir and lock prefix. However, this will not
+   * work when LockFactorys are created by different
+   * classloaders (eg multiple webapps).
+   *
+   * TODO: Java 1.6 tracks system wide locks in a thread safe manner
+   * (same FileChannel instance or not), so we may want to
    * change this when Lucene moves to Java 1.6.
    */
   private static HashSet<String> LOCK_HELD = new HashSet<String>();
@@ -171,7 +174,7 @@ class NativeFSLock extends Lock {
         throw new IOException("Cannot create directory: " +
                               lockDir.getAbsolutePath());
     } else if (!lockDir.isDirectory()) {
-      throw new IOException("Found regular file where directory expected: " + 
+      throw new IOException("Found regular file where directory expected: " +
                             lockDir.getAbsolutePath());
     }
 
@@ -306,13 +309,13 @@ class NativeFSLock extends Lock {
   @Override
   public synchronized boolean isLocked() {
     // The test for is isLocked is not directly possible with native file locks:
-    
+
     // First a shortcut, if a lock reference in this instance is available
     if (lockExists()) return true;
-    
+
     // Look if lock file is present; if not, there can definitely be no lock!
     if (!path.exists()) return false;
-    
+
     // Try to obtain and release (if was locked) the lock
     try {
       boolean obtained = obtain();
@@ -320,7 +323,7 @@ class NativeFSLock extends Lock {
       return !obtained;
     } catch (IOException ioe) {
       return false;
-    }    
+    }
   }
 
   @Override

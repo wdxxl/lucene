@@ -24,6 +24,8 @@ import java.util.Set;
 
 import org.apache.lucene.util.Version;
 
+import com.google.j2objc.annotations.Weak;
+
 /**
  * A simple class that stores Strings as char[]'s in a
  * hash table.  Note that this is not a general purpose
@@ -56,12 +58,12 @@ import org.apache.lucene.util.Version;
 public class CharArraySet extends AbstractSet<Object> {
   public static final CharArraySet EMPTY_SET = new CharArraySet(CharArrayMap.<Object>emptyMap());
   private static final Object PLACEHOLDER = new Object();
-  
-  private final CharArrayMap<Object> map;
-  
+
+  @Weak private final CharArrayMap<Object> map;
+
   /**
    * Create set with enough capacity to hold startSize terms
-   * 
+   *
    * @param matchVersion
    *          compatibility match version see <a href="#version">Version
    *          note</a> above for details.
@@ -76,8 +78,8 @@ public class CharArraySet extends AbstractSet<Object> {
   }
 
   /**
-   * Creates a set from a Collection of objects. 
-   * 
+   * Creates a set from a Collection of objects.
+   *
    * @param matchVersion
    *          compatibility match version see <a href="#version">Version
    *          note</a> above for details.
@@ -94,7 +96,7 @@ public class CharArraySet extends AbstractSet<Object> {
 
   /**
    * Creates a set with enough capacity to hold startSize terms
-   * 
+   *
    * @param startSize
    *          the initial capacity
    * @param ignoreCase
@@ -106,28 +108,28 @@ public class CharArraySet extends AbstractSet<Object> {
   public CharArraySet(int startSize, boolean ignoreCase) {
     this(Version.LUCENE_30, startSize, ignoreCase);
   }
-  
+
   /**
-   * Creates a set from a Collection of objects. 
-   * 
+   * Creates a set from a Collection of objects.
+   *
    * @param c
    *          a collection whose elements to be placed into the set
    * @param ignoreCase
    *          <code>false</code> if and only if the set should be case sensitive
    *          otherwise <code>true</code>.
-   * @deprecated use {@link #CharArraySet(Version, Collection, boolean)} instead         
-   */  
+   * @deprecated use {@link #CharArraySet(Version, Collection, boolean)} instead
+   */
   @Deprecated
   public CharArraySet(Collection<?> c, boolean ignoreCase) {
     this(Version.LUCENE_30, c.size(), ignoreCase);
     addAll(c);
   }
-  
+
   /** Create set from the specified map (internal only), used also by {@link CharArrayMap#keySet()} */
   CharArraySet(final CharArrayMap<Object> map){
     this.map = map;
   }
-  
+
   /** Clears all entries in this set. This method is supported for reusing, but not {@link Set#remove}. */
   @Override
   public void clear() {
@@ -159,7 +161,7 @@ public class CharArraySet extends AbstractSet<Object> {
   public boolean add(CharSequence text) {
     return map.put(text, PLACEHOLDER) == null;
   }
-  
+
   /** Add this String into the set */
   public boolean add(String text) {
     return map.put(text, PLACEHOLDER) == null;
@@ -177,11 +179,11 @@ public class CharArraySet extends AbstractSet<Object> {
   public int size() {
     return map.size();
   }
-  
+
   /**
    * Returns an unmodifiable {@link CharArraySet}. This allows to provide
    * unmodifiable views of internal sets for "read-only" use.
-   * 
+   *
    * @param set
    *          a set for which the unmodifiable set is returned.
    * @return an new unmodifiable {@link CharArraySet}.
@@ -201,7 +203,7 @@ public class CharArraySet extends AbstractSet<Object> {
   /**
    * Returns a copy of the given set as a {@link CharArraySet}. If the given set
    * is a {@link CharArraySet} the ignoreCase property will be preserved.
-   * 
+   *
    * @param set
    *          a set to copy
    * @return a copy of the given set as a {@link CharArraySet}. If the given set
@@ -215,7 +217,7 @@ public class CharArraySet extends AbstractSet<Object> {
       return EMPTY_SET;
     return copy(Version.LUCENE_30, set);
   }
-  
+
   /**
    * Returns a copy of the given set as a {@link CharArraySet}. If the given set
    * is a {@link CharArraySet} the ignoreCase property will be preserved.
@@ -226,7 +228,7 @@ public class CharArraySet extends AbstractSet<Object> {
    * The {@link #copy(Version, Set)} will preserve the {@link Version} of the
    * source set it is an instance of {@link CharArraySet}.
    * </p>
-   * 
+   *
    * @param matchVersion
    *          compatibility match version see <a href="#version">Version
    *          note</a> above for details. This argument will be ignored if the
@@ -246,7 +248,7 @@ public class CharArraySet extends AbstractSet<Object> {
     }
     return new CharArraySet(matchVersion, set, false);
   }
-  
+
   /** The Iterator<String> for this set.  Strings are constructed on the fly, so
    * use <code>nextCharArray</code> for more efficient access.
    * @deprecated Use the standard iterator, which returns {@code char[]} instances.
@@ -310,7 +312,7 @@ public class CharArraySet extends AbstractSet<Object> {
     return map.matchVersion.onOrAfter(Version.LUCENE_31) ?
       map.originalKeySet().iterator() : (Iterator) stringIterator();
   }
-  
+
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder("[");

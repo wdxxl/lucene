@@ -1,5 +1,7 @@
 package org.apache.lucene.store;
 
+import java.io.File;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,22 +18,22 @@ package org.apache.lucene.store;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
 import java.io.IOException;
-import java.io.File;
 import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
+import java.lang.reflect.Method;
 import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException; // javadoc
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
-
 import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
-import java.lang.reflect.Method;
+import java.security.PrivilegedExceptionAction;
 
 import org.apache.lucene.util.Constants;
+
+import com.google.j2objc.annotations.Weak;
 
 /** File-based {@link Directory} implementation that uses
  *  mmap for reading, and {@link
@@ -74,7 +76,7 @@ import org.apache.lucene.util.Constants;
  * indirectly from a thread while it's interrupted can close the
  * underlying channel immediately if at the same time the thread is
  * blocked on IO. The channel will remain closed and subsequent access
- * to {@link MMapDirectory} will throw a {@link ClosedChannelException}. 
+ * to {@link MMapDirectory} will throw a {@link ClosedChannelException}.
  * </p>
  */
 public class MMapDirectory extends FSDirectory {
@@ -120,7 +122,7 @@ public class MMapDirectory extends FSDirectory {
     }
     UNMAP_SUPPORTED = v;
   }
-  
+
   /**
    * This method enables the workaround for unmapping the buffers
    * from address space after closing {@link IndexInput}, that is
@@ -138,7 +140,7 @@ public class MMapDirectory extends FSDirectory {
       throw new IllegalArgumentException("Unmap hack not supported on this platform!");
     this.useUnmapHack=useUnmapHack;
   }
-  
+
   /**
    * Returns <code>true</code>, if the unmap workaround is enabled.
    * @see #setUseUnmap
@@ -146,7 +148,7 @@ public class MMapDirectory extends FSDirectory {
   public boolean getUseUnmap() {
     return useUnmapHack;
   }
-  
+
   /**
    * Try to unmap the buffer, this method silently fails if no support
    * for that in the JVM. On Windows, this leads to the fact,
@@ -175,7 +177,7 @@ public class MMapDirectory extends FSDirectory {
       }
     }
   }
-  
+
   /**
    * Sets the maximum chunk size (default is {@link Integer#MAX_VALUE} for
    * 64 bit JVMs and 256 MiBytes for 32 bit JVMs) used for memory mapping.
@@ -197,7 +199,7 @@ public class MMapDirectory extends FSDirectory {
     assert this.chunkSizePower >= 0 && this.chunkSizePower <= 30;
     //System.out.println("Got chunk size: "+getMaxChunkSize());
   }
-  
+
   /**
    * Returns the current mmap chunk size.
    * @see #setMaxChunkSize
@@ -223,41 +225,41 @@ public class MMapDirectory extends FSDirectory {
   // values, it's necessary to access a file >
   // Integer.MAX_VALUE in size using multiple byte buffers.
   private final class MMapIndexInput extends IndexInput {
-  
-    private ByteBuffer[] buffers;
-  
+
+    @Weak private ByteBuffer[] buffers;
+
     private final long length, chunkSizeMask, chunkSize;
     private final int chunkSizePower;
-  
+
     private int curBufIndex;
-  
+
     private ByteBuffer curBuf; // redundant for speed: buffers[curBufIndex]
-  
+
     private boolean isClone = false;
-    
+
     MMapIndexInput(String resourceDescription, RandomAccessFile raf, int chunkSizePower) throws IOException {
       super(resourceDescription);
       this.length = raf.length();
       this.chunkSizePower = chunkSizePower;
       this.chunkSize = 1L << chunkSizePower;
       this.chunkSizeMask = chunkSize - 1L;
-      
+
       if (chunkSizePower < 0 || chunkSizePower > 30)
         throw new IllegalArgumentException("Invalid chunkSizePower used for ByteBuffer size: " + chunkSizePower);
-      
+
       if ((length >>> chunkSizePower) >= Integer.MAX_VALUE)
         throw new IllegalArgumentException("RandomAccessFile too big for chunk size: " + raf.toString());
-      
+
       // we always allocate one more buffer, the last one may be a 0 byte one
       final int nrBuffers = (int) (length >>> chunkSizePower) + 1;
-      
+
       //System.out.println("length="+length+", chunkSizePower=" + chunkSizePower + ", chunkSizeMask=" + chunkSizeMask + ", nrBuffers=" + nrBuffers);
-      
+
       this.buffers = new ByteBuffer[nrBuffers];
-      
+
       long bufferStart = 0L;
       FileChannel rafc = raf.getChannel();
-      for (int bufNr = 0; bufNr < nrBuffers; bufNr++) { 
+      for (int bufNr = 0; bufNr < nrBuffers; bufNr++) {
         int bufSize = (int) ( (length > (bufferStart + chunkSize))
           ? chunkSize
           : (length - bufferStart)
@@ -267,7 +269,7 @@ public class MMapDirectory extends FSDirectory {
       }
       seek(0L);
     }
-  
+
     @Override
     public byte readByte() throws IOException {
       try {
@@ -284,7 +286,7 @@ public class MMapDirectory extends FSDirectory {
         return curBuf.get();
       }
     }
-  
+
     @Override
     public void readBytes(byte[] b, int offset, int len) throws IOException {
       try {
@@ -324,12 +326,12 @@ public class MMapDirectory extends FSDirectory {
         return super.readLong();
       }
     }
-    
+
     @Override
     public long getFilePointer() {
       return (((long) curBufIndex) << chunkSizePower) + curBuf.position();
     }
-  
+
     @Override
     public void seek(long pos) throws IOException {
       // we use >> here to preserve negative, so we will catch AIOOBE:
@@ -352,12 +354,12 @@ public class MMapDirectory extends FSDirectory {
         throw new IOException("seek past EOF: " + this);
       }
     }
-  
+
     @Override
     public long length() {
       return length;
     }
-  
+
     @Override
     public Object clone() {
       if (buffers == null) {
@@ -378,7 +380,7 @@ public class MMapDirectory extends FSDirectory {
       }
       return clone;
     }
-  
+
     @Override
     public void close() throws IOException {
       try {

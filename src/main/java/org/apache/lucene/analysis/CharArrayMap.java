@@ -357,7 +357,7 @@ public class CharArrayMap<V> extends AbstractMap<Object,V> {
   }
 
   @Weak private EntrySet entrySet = null;
-  private CharArraySet keySet = null;
+  @Weak private CharArraySet keySet = null;
 
   EntrySet createEntrySet() {
     return new EntrySet(true);

@@ -1,5 +1,7 @@
 package org.apache.lucene.store;
 
+import java.io.FileNotFoundException;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -18,7 +20,6 @@ package org.apache.lucene.store;
  */
 
 import java.io.IOException;
-import java.io.FileNotFoundException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +31,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.lucene.index.IndexFileNameFilter;
 import org.apache.lucene.util.ThreadInterruptedException;
 
+import com.google.j2objc.annotations.Weak;
+
 /**
  * A memory-resident {@link Directory} implementation.  Locking
  * implementation is by default the {@link SingleInstanceLockFactory}
@@ -39,9 +42,9 @@ public class RAMDirectory extends Directory implements Serializable {
 
   private static final long serialVersionUID = 1l;
 
-  protected final Map<String,RAMFile> fileMap = new ConcurrentHashMap<String,RAMFile>();
+  @Weak protected final Map<String,RAMFile> fileMap = new ConcurrentHashMap<String,RAMFile>();
   protected final AtomicLong sizeInBytes = new AtomicLong();
-  
+
   // *****
   // Lock acquisition sequence:  RAMDirectory, then RAMFile
   // *****
@@ -74,7 +77,7 @@ public class RAMDirectory extends Directory implements Serializable {
   public RAMDirectory(Directory dir) throws IOException {
     this(dir, false);
   }
-  
+
   private RAMDirectory(Directory dir, boolean closeDir) throws IOException {
     this();
 
@@ -132,7 +135,7 @@ public class RAMDirectory extends Directory implements Serializable {
     if (file == null) {
       throw new FileNotFoundException(name);
     }
-    
+
     long ts2, ts1 = System.currentTimeMillis();
     do {
       try {
@@ -142,7 +145,7 @@ public class RAMDirectory extends Directory implements Serializable {
       }
       ts2 = System.currentTimeMillis();
     } while(ts1 == ts2);
-    
+
     file.setLastModified(ts2);
   }
 
@@ -158,7 +161,7 @@ public class RAMDirectory extends Directory implements Serializable {
     }
     return file.getLength();
   }
-  
+
   /**
    * Return total size in bytes of all files in this directory. This is
    * currently quantized to RAMOutputStream.BUFFER_SIZE.
@@ -167,7 +170,7 @@ public class RAMDirectory extends Directory implements Serializable {
     ensureOpen();
     return sizeInBytes.get();
   }
-  
+
   /** Removes an existing file in the directory.
    * @throws IOException if the file does not exist
    */

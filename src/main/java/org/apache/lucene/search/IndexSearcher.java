@@ -35,11 +35,14 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.FieldSelector;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.NIOFSDirectory; // javadocs
 import org.apache.lucene.util.ReaderUtil;
 import org.apache.lucene.util.ThreadInterruptedException;
+
+import com.google.j2objc.annotations.Weak;
 
 /** Implements search over a single IndexReader.
  *
@@ -57,7 +60,7 @@ import org.apache.lucene.util.ThreadInterruptedException;
  * reader ({@link IndexReader#open(IndexWriter,boolean)}).
  * Once you have a new {@link IndexReader}, it's relatively
  * cheap to create a new IndexSearcher from it.
- * 
+ *
  * <a name="thread-safety"></a><p><b>NOTE</b>: <code>{@link
  * IndexSearcher}</code> instances are completely
  * thread safe, meaning multiple threads can call any of its
@@ -67,14 +70,14 @@ import org.apache.lucene.util.ThreadInterruptedException;
  * use your own (non-Lucene) objects instead.</p>
  */
 public class IndexSearcher extends Searcher {
-  IndexReader reader;
+  @Weak IndexReader reader;
   private boolean closeReader;
-  
+
   // NOTE: these members might change in incompatible ways
   // in the next release
   protected final IndexReader[] subReaders;
   protected final int[] docStarts;
-  
+
   // These are only used for multi-threaded search
   private final ExecutorService executor;
   protected final IndexSearcher[] subSearchers;
@@ -124,7 +127,7 @@ public class IndexSearcher extends Searcher {
    *  Thread.interrupt under-the-hood which can silently
    *  close file descriptors (see <a
    *  href="https://issues.apache.org/jira/browse/LUCENE-2239">LUCENE-2239</a>).
-   * 
+   *
    * @lucene.experimental */
   public IndexSearcher(IndexReader r, ExecutorService executor) {
     this(r, false, executor);
@@ -132,12 +135,12 @@ public class IndexSearcher extends Searcher {
 
   /** Expert: directly specify the reader, subReaders and
    *  their docID starts.
-   * 
+   *
    * @lucene.experimental */
   public IndexSearcher(IndexReader reader, IndexReader[] subReaders, int[] docStarts) {
     this(reader, subReaders, docStarts, null);
   }
-  
+
   // Used only when we are an atomic sub-searcher in a parent
   // IndexSearcher that has an ExecutorService, to record
   // our docBase in the parent IndexSearcher:
@@ -162,7 +165,7 @@ public class IndexSearcher extends Searcher {
    *  Thread.interrupt under-the-hood which can silently
    *  close file descriptors (see <a
    *  href="https://issues.apache.org/jira/browse/LUCENE-2239">LUCENE-2239</a>).
-   * 
+   *
    * @lucene.experimental */
   public IndexSearcher(IndexReader reader, IndexReader[] subReaders, int[] docStarts, ExecutorService executor) {
     this.reader = reader;
@@ -221,7 +224,7 @@ public class IndexSearcher extends Searcher {
   }
 
   /** Expert: Returns one greater than the largest possible document number.
-   * 
+   *
    * @see org.apache.lucene.index.IndexReader#maxDoc()
    */
   @Override
@@ -257,13 +260,13 @@ public class IndexSearcher extends Searcher {
   public Document doc(int docID) throws CorruptIndexException, IOException {
     return reader.document(docID);
   }
-  
+
   /* Sugar for .getIndexReader().document(docID, fieldSelector) */
   @Override
   public Document doc(int docID, FieldSelector fieldSelector) throws CorruptIndexException, IOException {
     return reader.document(docID, fieldSelector);
   }
-  
+
   /** Expert: Set the Similarity implementation used by this Searcher.
    *
    * @see Similarity#setDefault(Similarity)
@@ -292,7 +295,7 @@ public class IndexSearcher extends Searcher {
   }
 
   /** Finds the top <code>n</code>
-   * hits for <code>query</code> where all results are after a previous 
+   * hits for <code>query</code> where all results are after a previous
    * result (<code>after</code>).
    * <p>
    * By passing the bottom result from a previous page as <code>after</code>,
@@ -304,7 +307,7 @@ public class IndexSearcher extends Searcher {
   public TopDocs searchAfter(ScoreDoc after, Query query, int n) throws IOException {
     return searchAfter(after, query, null, n);
   }
-  
+
   /** Finds the top <code>n</code>
    * hits for <code>query</code>, applying <code>filter</code> if non-null,
    * where all results are after a previous result (<code>after</code>).
@@ -318,7 +321,7 @@ public class IndexSearcher extends Searcher {
   public TopDocs searchAfter(ScoreDoc after, Query query, Filter filter, int n) throws IOException {
     return search(createNormalizedWeight(query), filter, after, n);
   }
-  
+
   /** Finds the top <code>n</code>
    * hits for <code>query</code>.
    *
@@ -382,12 +385,12 @@ public class IndexSearcher extends Searcher {
     throws IOException {
     search(createNormalizedWeight(query), null, results);
   }
-  
+
   /** Search implementation with arbitrary sorting.  Finds
    * the top <code>n</code> hits for <code>query</code>, applying
    * <code>filter</code> if non-null, and sorting the hits by the criteria in
    * <code>sort</code>.
-   * 
+   *
    * <p>NOTE: this does not compute scores by default; use
    * {@link IndexSearcher#setDefaultFieldSortScoring} to
    * enable scoring.
@@ -425,12 +428,12 @@ public class IndexSearcher extends Searcher {
   public TopDocs search(Weight weight, Filter filter, int nDocs) throws IOException {
     return search(weight, filter, null, nDocs);
   }
-  
+
   /**
    * Expert: Low-level search implementation.  Finds the top <code>n</code>
    * hits for <code>query</code>, applying <code>filter</code> if non-null,
    * returning results after <code>after</code>.
-   * 
+   *
    * @throws BooleanQuery.TooManyClauses
    */
   protected TopDocs search(Weight weight, Filter filter, ScoreDoc after, int nDocs) throws IOException {
@@ -448,7 +451,7 @@ public class IndexSearcher extends Searcher {
       final HitQueue hq = new HitQueue(nDocs, false);
       final Lock lock = new ReentrantLock();
       final ExecutionHelper<TopDocs> runner = new ExecutionHelper<TopDocs>(executor);
-    
+
       for (int i = 0; i < subReaders.length; i++) { // search each sub
         runner.submit(
                       new MultiSearcherCallableNoSort(lock, subSearchers[i], weight, filter, after, nDocs, hq));
@@ -478,7 +481,7 @@ public class IndexSearcher extends Searcher {
    *
    * <p>Applications should usually call {@link
    * Searcher#search(Query,Filter,int,Sort)} instead.
-   * 
+   *
    * @throws BooleanQuery.TooManyClauses
    */
   @Override
@@ -546,16 +549,16 @@ public class IndexSearcher extends Searcher {
 
   /**
    * Lower-level search API.
-   * 
+   *
    * <p>
    * {@link Collector#collect(int)} is called for every document. <br>
    * Collector-based access to remote indexes is discouraged.
-   * 
+   *
    * <p>
    * Applications should only use this if they need <i>all</i> of the matching
    * documents. The high-level search API ({@link Searcher#search(Query,int)}) is
    * usually more efficient, as it skips non-high-scoring hits.
-   * 
+   *
    * @param weight
    *          to match documents
    * @param filter
@@ -624,7 +627,7 @@ public class IndexSearcher extends Searcher {
   public Explanation explain(Weight weight, int doc) throws IOException {
     int n = ReaderUtil.subIndex(doc, docStarts);
     int deBasedDoc = doc - docStarts[n];
-    
+
     return weight.explain(subReaders[n], deBasedDoc);
   }
 
@@ -636,7 +639,7 @@ public class IndexSearcher extends Searcher {
    *  You can change that, per IndexSearcher instance, by
    *  calling this method.  Note that this will incur a CPU
    *  cost.
-   * 
+   *
    *  @param doTrackScores If true, then scores are
    *  returned for every matching document in {@link
    *  TopFieldDocs}.
@@ -665,7 +668,7 @@ public class IndexSearcher extends Searcher {
   }
 
   /**
-   * A thread subclass for searching a single searchable 
+   * A thread subclass for searching a single searchable
    */
   private static final class MultiSearcherCallableNoSort implements Callable<TopDocs> {
 
@@ -698,7 +701,7 @@ public class IndexSearcher extends Searcher {
         docs = searchable.search (weight, filter, after, nDocs);
       }
       final ScoreDoc[] scoreDocs = docs.scoreDocs;
-      //it would be so nice if we had a thread-safe insert 
+      //it would be so nice if we had a thread-safe insert
       lock.lock();
       try {
         for (int j = 0; j < scoreDocs.length; j++) { // merge scoreDocs into hq
@@ -716,7 +719,7 @@ public class IndexSearcher extends Searcher {
 
 
   /**
-   * A thread subclass for searching a single searchable 
+   * A thread subclass for searching a single searchable
    */
   private static final class MultiSearcherCallableWithSort implements Callable<TopFieldDocs> {
 
@@ -746,7 +749,7 @@ public class IndexSearcher extends Searcher {
       public FakeScorer() {
         super(null, null);
       }
-    
+
       @Override
       public int advance(int target) {
         throw new UnsupportedOperationException();
@@ -766,7 +769,7 @@ public class IndexSearcher extends Searcher {
       public int nextDoc() {
         throw new UnsupportedOperationException();
       }
-    
+
       @Override
       public float score() {
         return score;
@@ -812,7 +815,7 @@ public class IndexSearcher extends Searcher {
   /**
    * A helper class that wraps a {@link CompletionService} and provides an
    * iterable interface to the completed {@link Callable} instances.
-   * 
+   *
    * @param <T>
    *          the type of the {@link Callable} return value
    */

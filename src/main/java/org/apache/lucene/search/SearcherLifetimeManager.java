@@ -26,10 +26,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.lucene.index.IndexReader;        // javadocs
-import org.apache.lucene.search.NRTManager;        // javadocs
-import org.apache.lucene.search.IndexSearcher;        // javadocs
 import org.apache.lucene.store.AlreadyClosedException;
 import org.apache.lucene.util.IOUtils;
+
+import com.google.j2objc.annotations.Weak;
 
 /**
  * Keeps track of current plus old IndexSearchers, closing
@@ -96,14 +96,14 @@ import org.apache.lucene.util.IOUtils;
  * it's unlikely you'll hit two of them in your expiration
  * window.  Still you should budget plenty of heap in the
  * JVM to have a good safety margin.
- * 
+ *
  * @lucene.experimental
  */
 
 public class SearcherLifetimeManager implements Closeable {
 
   private static class SearcherTracker implements Comparable<SearcherTracker>, Closeable {
-    public final IndexSearcher searcher;
+    @Weak public final IndexSearcher searcher;
     public final long recordTimeSec;
     public final long version;
 
@@ -207,7 +207,7 @@ public class SearcherLifetimeManager implements Closeable {
 
   /** Release a searcher previously obtained from {@link
    *  #acquire}.
-   * 
+   *
    * <p><b>NOTE</b>: it's fine to call this after close. */
   public void release(IndexSearcher s) throws IOException {
     s.getIndexReader().decRef();
@@ -215,7 +215,7 @@ public class SearcherLifetimeManager implements Closeable {
 
   /** See {@link #prune}. */
   public interface Pruner {
-    /** Return true if this searcher should be removed. 
+    /** Return true if this searcher should be removed.
      *  @param ageSec how long ago this searcher was
      *         recorded vs the most recently recorded
      *         searcher
@@ -245,7 +245,7 @@ public class SearcherLifetimeManager implements Closeable {
   /** Calls provided {@link Pruner} to prune entries.  The
    *  entries are passed to the Pruner in sorted (newest to
    *  oldest IndexSearcher) order.
-   * 
+   *
    *  <p><b>NOTE</b>: you must peridiocally call this, ideally
    *  from the same background thread that opens new
    *  searchers. */

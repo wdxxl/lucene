@@ -1,5 +1,10 @@
 package org.apache.lucene.analysis;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -19,19 +24,16 @@ package org.apache.lucene.analysis;
 
 import org.apache.lucene.document.Fieldable;
 
-import java.io.Reader;
-import java.io.IOException;
-import java.util.Map;
-import java.util.HashMap;
+import com.google.j2objc.annotations.Weak;
 
 /**
  * This analyzer is used to facilitate scenarios where different
  * fields require different analysis techniques.  Use the Map
  * argument in {@link #PerFieldAnalyzerWrapper(Analyzer, java.util.Map)}
  * to add non-default analyzers for fields.
- * 
+ *
  * <p>Example usage:
- * 
+ *
  * <pre>
  *   Map analyzerPerField = new HashMap();
  *   analyzerPerField.put("firstname", new KeywordAnalyzer());
@@ -40,16 +42,16 @@ import java.util.HashMap;
  *   PerFieldAnalyzerWrapper aWrapper =
  *      new PerFieldAnalyzerWrapper(new StandardAnalyzer(), analyzerPerField);
  * </pre>
- * 
+ *
  * <p>In this example, StandardAnalyzer will be used for all fields except "firstname"
  * and "lastname", for which KeywordAnalyzer will be used.
- * 
+ *
  * <p>A PerFieldAnalyzerWrapper can be used like any other analyzer, for both indexing
  * and query parsing.
  */
 public final class PerFieldAnalyzerWrapper extends Analyzer {
   private final Analyzer defaultAnalyzer;
-  private final Map<String,Analyzer> analyzerMap = new HashMap<String,Analyzer>();
+  @Weak private final Map<String,Analyzer> analyzerMap = new HashMap<String,Analyzer>();
 
 
   /**
@@ -61,24 +63,24 @@ public final class PerFieldAnalyzerWrapper extends Analyzer {
   public PerFieldAnalyzerWrapper(Analyzer defaultAnalyzer) {
     this(defaultAnalyzer, null);
   }
-  
+
   /**
-   * Constructs with default analyzer and a map of analyzers to use for 
+   * Constructs with default analyzer and a map of analyzers to use for
    * specific fields.
    *
    * @param defaultAnalyzer Any fields not specifically
    * defined to use a different analyzer will use the one provided here.
-   * @param fieldAnalyzers a Map (String field name to the Analyzer) to be 
-   * used for those fields 
+   * @param fieldAnalyzers a Map (String field name to the Analyzer) to be
+   * used for those fields
    */
-  public PerFieldAnalyzerWrapper(Analyzer defaultAnalyzer, 
+  public PerFieldAnalyzerWrapper(Analyzer defaultAnalyzer,
       Map<String,Analyzer> fieldAnalyzers) {
     this.defaultAnalyzer = defaultAnalyzer;
     if (fieldAnalyzers != null) {
       analyzerMap.putAll(fieldAnalyzers);
     }
   }
-  
+
 
   /**
    * Defines an analyzer to use for the specified field.
@@ -102,7 +104,7 @@ public final class PerFieldAnalyzerWrapper extends Analyzer {
 
     return analyzer.tokenStream(fieldName, reader);
   }
-  
+
   @Override
   public TokenStream reusableTokenStream(String fieldName, Reader reader) throws IOException {
     Analyzer analyzer = analyzerMap.get(fieldName);
@@ -111,7 +113,7 @@ public final class PerFieldAnalyzerWrapper extends Analyzer {
 
     return analyzer.reusableTokenStream(fieldName, reader);
   }
-  
+
   /** Return the positionIncrementGap from the analyzer assigned to fieldName */
   @Override
   public int getPositionIncrementGap(String fieldName) {
@@ -129,7 +131,7 @@ public final class PerFieldAnalyzerWrapper extends Analyzer {
       analyzer = defaultAnalyzer;
     return analyzer.getOffsetGap(field);
   }
-  
+
   @Override
   public String toString() {
     return "PerFieldAnalyzerWrapper(" + analyzerMap + ", default=" + defaultAnalyzer + ")";

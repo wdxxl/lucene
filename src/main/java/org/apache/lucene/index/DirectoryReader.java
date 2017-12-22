@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,14 +38,16 @@ import org.apache.lucene.store.Lock;
 import org.apache.lucene.store.LockObtainFailedException;
 import org.apache.lucene.util.MapBackedSet;
 
-/** 
+import com.google.j2objc.annotations.Weak;
+
+/**
  * An IndexReader which reads indexes with multiple segments.
  */
 class DirectoryReader extends IndexReader implements Cloneable {
   protected Directory directory;
   protected boolean readOnly;
 
-  IndexWriter writer;
+  @Weak IndexWriter writer;
 
   private IndexDeletionPolicy deletionPolicy;
   private Lock writeLock;
@@ -205,13 +206,13 @@ class DirectoryReader extends IndexReader implements Cloneable {
         segmentReaders.put(oldReaders[i].getSegmentName(), Integer.valueOf(i));
       }
     }
-    
+
     SegmentReader[] newReaders = new SegmentReader[infos.size()];
-    
+
     // remember which readers are shared between the old and the re-opened
     // DirectoryReader - we have to incRef those readers
     boolean[] readerShared = new boolean[infos.size()];
-    
+
     for (int i = infos.size() - 1; i>=0; i--) {
       // find SegmentReader for this segment
       Integer oldReaderIndex = segmentReaders.get(infos.info(i).name);
@@ -272,11 +273,11 @@ class DirectoryReader extends IndexReader implements Cloneable {
           }
         }
       }
-    }    
-    
+    }
+
     // initialize the readers to calculate maxDoc before we try to reuse the old normsCache
     initialize(newReaders);
-    
+
     // try to copy unchanged norms from the old normsCache to the new one
     if (oldNormsCache != null) {
       for (Map.Entry<String,byte[]> entry: oldNormsCache.entrySet()) {
@@ -292,9 +293,9 @@ class DirectoryReader extends IndexReader implements Cloneable {
         for (int i = 0; i < subReaders.length; i++) {
           Integer oldReaderIndex = segmentReaders.get(subReaders[i].getSegmentName());
 
-          // this SegmentReader was not re-opened, we can copy all of its norms 
+          // this SegmentReader was not re-opened, we can copy all of its norms
           if (oldReaderIndex != null &&
-               (oldReaders[oldReaderIndex.intValue()] == subReaders[i] 
+               (oldReaders[oldReaderIndex.intValue()] == subReaders[i]
                  || oldReaders[oldReaderIndex.intValue()].norms.get(field) == subReaders[i].norms.get(field))) {
             // we don't have to synchronize here: either this constructor is called from a SegmentReader,
             // in which case no old norms cache is present, or it is called from MultiReader.reopen(),
@@ -405,7 +406,7 @@ class DirectoryReader extends IndexReader implements Cloneable {
   protected final IndexReader doOpenIfChanged(IndexWriter writer, boolean applyAllDeletes) throws CorruptIndexException, IOException {
     if (writer == this.writer && applyAllDeletes == this.applyAllDeletes) {
       return doOpenIfChanged();
-    } else {    
+    } else {
       return super.doOpenIfChanged(writer, applyAllDeletes);
     }
   }
@@ -616,7 +617,7 @@ class DirectoryReader extends IndexReader implements Cloneable {
   private int readerIndex(int n) {    // find reader for doc n:
     return readerIndex(n, this.starts, this.subReaders.length);
   }
-  
+
   final static int readerIndex(int n, int[] starts, int numSubReaders) {    // find reader for doc n:
     int lo = 0;                                      // search starts array
     int hi = numSubReaders - 1;                  // for first element less
@@ -683,7 +684,7 @@ class DirectoryReader extends IndexReader implements Cloneable {
   protected void doSetNorm(int n, String field, byte value)
     throws CorruptIndexException, IOException {
     synchronized (normsCache) {
-      normsCache.remove(field);                         // clear cache      
+      normsCache.remove(field);                         // clear cache
     }
     int i = readerIndex(n);                           // find segment num
     subReaders[i].setNorm(n-starts[i], field, value); // dispatch
@@ -932,7 +933,7 @@ class DirectoryReader extends IndexReader implements Cloneable {
     ensureOpen();
     return getFieldNames(fieldNames, this.subReaders);
   }
-  
+
   static Collection<String> getFieldNames (IndexReader.FieldOption fieldNames, IndexReader[] subReaders) {
     // maintain a unique set of field names
     Set<String> fieldSet = new HashSet<String>();
@@ -941,8 +942,8 @@ class DirectoryReader extends IndexReader implements Cloneable {
       fieldSet.addAll(names);
     }
     return fieldSet;
-  } 
-  
+  }
+
   @Override
   public IndexReader[] getSequentialSubReaders() {
     return subReaders;
@@ -1094,10 +1095,10 @@ class DirectoryReader extends IndexReader implements Cloneable {
   static class MultiTermEnum extends TermEnum {
     IndexReader topReader; // used for matching TermEnum to TermDocs
     private SegmentMergeQueue queue;
-  
+
     private Term term;
     private int docFreq;
-    final SegmentMergeInfo[] matchingSegments; // null terminated array of matching segments
+    @Weak final SegmentMergeInfo[] matchingSegments; // null terminated array of matching segments
 
     public MultiTermEnum(IndexReader topReader, IndexReader[] readers, int[] starts, Term t)
       throws IOException {
@@ -1107,12 +1108,12 @@ class DirectoryReader extends IndexReader implements Cloneable {
       for (int i = 0; i < readers.length; i++) {
         IndexReader reader = readers[i];
         TermEnum termEnum;
-  
+
         if (t != null) {
           termEnum = reader.terms(t);
         } else
           termEnum = reader.terms();
-  
+
         SegmentMergeInfo smi = new SegmentMergeInfo(starts[i], termEnum, reader);
         smi.ord = i;
         if (t == null ? smi.next() : termEnum.term() != null)
@@ -1120,12 +1121,12 @@ class DirectoryReader extends IndexReader implements Cloneable {
         else
           smi.close();
       }
-  
+
       if (t != null && queue.size() > 0) {
         next();
       }
     }
-  
+
     @Override
     public boolean next() throws IOException {
       for (int i=0; i<matchingSegments.length; i++) {
@@ -1136,7 +1137,7 @@ class DirectoryReader extends IndexReader implements Cloneable {
         else
           smi.close(); // done with segment
       }
-      
+
       int numMatchingSegments = 0;
       matchingSegments[0] = null;
 
@@ -1146,10 +1147,10 @@ class DirectoryReader extends IndexReader implements Cloneable {
         term = null;
         return false;
       }
-  
+
       term = top.term;
       docFreq = 0;
-  
+
       while (top != null && term.compareTo(top.term) == 0) {
         matchingSegments[numMatchingSegments++] = top;
         queue.pop();
@@ -1160,17 +1161,17 @@ class DirectoryReader extends IndexReader implements Cloneable {
       matchingSegments[numMatchingSegments] = null;
       return true;
     }
-  
+
     @Override
     public Term term() {
       return term;
     }
-  
+
     @Override
     public int docFreq() {
       return docFreq;
     }
-  
+
     @Override
     public void close() throws IOException {
       queue.close();
@@ -1182,22 +1183,22 @@ class DirectoryReader extends IndexReader implements Cloneable {
     protected IndexReader[] readers;
     protected int[] starts;
     protected Term term;
-  
+
     protected int base = 0;
     protected int pointer = 0;
-  
+
     private TermDocs[] readerTermDocs;
     protected TermDocs current;              // == readerTermDocs[pointer]
 
     private MultiTermEnum tenum;  // the term enum used for seeking... can be null
     int matchingSegmentPos;  // position into the matching segments from tenum
-    SegmentMergeInfo smi;     // current segment mere info... can be null
+    @Weak SegmentMergeInfo smi;     // current segment mere info... can be null
 
     public MultiTermDocs(IndexReader topReader, IndexReader[] r, int[] s) {
       this.topReader = topReader;
       readers = r;
       starts = s;
-  
+
       readerTermDocs = new TermDocs[r.length];
     }
 
@@ -1207,7 +1208,7 @@ class DirectoryReader extends IndexReader implements Cloneable {
     public int freq() {
       return current.freq();
     }
-  
+
     public void seek(Term term) {
       this.term = term;
       this.base = 0;
@@ -1217,7 +1218,7 @@ class DirectoryReader extends IndexReader implements Cloneable {
       this.smi = null;
       this.matchingSegmentPos = 0;
     }
-  
+
     public void seek(TermEnum termEnum) throws IOException {
       seek(termEnum.term());
       if (termEnum instanceof MultiTermEnum) {
@@ -1226,7 +1227,7 @@ class DirectoryReader extends IndexReader implements Cloneable {
           tenum = null;
       }
     }
-  
+
     public boolean next() throws IOException {
       for(;;) {
         if (current!=null && current.next()) {
@@ -1248,7 +1249,7 @@ class DirectoryReader extends IndexReader implements Cloneable {
         }
       }
     }
-  
+
     /** Optimized implementation. */
     public int read(final int[] docs, final int[] freqs) throws IOException {
       while (true) {
@@ -1279,8 +1280,8 @@ class DirectoryReader extends IndexReader implements Cloneable {
         }
       }
     }
-  
-   /* A Possible future optimization could skip entire segments */ 
+
+   /* A Possible future optimization could skip entire segments */
     public boolean skipTo(int target) throws IOException {
       for(;;) {
         if (current != null && current.skipTo(target-base)) {
@@ -1300,7 +1301,7 @@ class DirectoryReader extends IndexReader implements Cloneable {
           return false;
       }
     }
-  
+
     private TermDocs termDocs(int i) throws IOException {
       TermDocs result = readerTermDocs[i];
       if (result == null)
@@ -1314,12 +1315,12 @@ class DirectoryReader extends IndexReader implements Cloneable {
       }
       return result;
     }
-  
+
     protected TermDocs termDocs(IndexReader reader)
       throws IOException {
       return term==null ? reader.termDocs(null) : reader.termDocs();
     }
-  
+
     public void close() throws IOException {
       for (int i = 0; i < readerTermDocs.length; i++) {
         if (readerTermDocs[i] != null)
@@ -1332,25 +1333,25 @@ class DirectoryReader extends IndexReader implements Cloneable {
     public MultiTermPositions(IndexReader topReader, IndexReader[] r, int[] s) {
       super(topReader,r,s);
     }
-  
+
     @Override
     protected TermDocs termDocs(IndexReader reader) throws IOException {
       return reader.termPositions();
     }
-  
+
     public int nextPosition() throws IOException {
       return ((TermPositions)current).nextPosition();
     }
-    
+
     public int getPayloadLength() {
       return ((TermPositions)current).getPayloadLength();
     }
-     
+
     public byte[] getPayload(byte[] data, int offset) throws IOException {
       return ((TermPositions)current).getPayload(data, offset);
     }
-  
-  
+
+
     // TODO: Remove warning after API has been finalized
     public boolean isPayloadAvailable() {
       return ((TermPositions) current).isPayloadAvailable();

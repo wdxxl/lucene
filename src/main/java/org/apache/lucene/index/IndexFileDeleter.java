@@ -32,6 +32,8 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.NoSuchDirectoryException;
 import org.apache.lucene.util.CollectionUtil;
 
+import com.google.j2objc.annotations.Weak;
+
 /*
  * This class keeps track of each SegmentInfos instance that
  * is still "live", either because it corresponds to a
@@ -53,12 +55,12 @@ import org.apache.lucene.util.CollectionUtil;
  * (IndexDeletionPolicy) is consulted on creation (onInit)
  * and once per commit (onCommit), to decide when a commit
  * should be removed.
- * 
+ *
  * It is the business of the IndexDeletionPolicy to choose
  * when to delete commit points.  The actual mechanics of
  * file deletion, retrying, etc, derived from the deletion
  * of commit points is the business of the IndexFileDeleter.
- * 
+ *
  * The current default deletion policy is {@link
  * KeepOnlyLastCommitDeletionPolicy}, which removes all
  * prior commits when a new commit has completed.  This
@@ -76,7 +78,7 @@ final class IndexFileDeleter {
    * so we will retry them again later: */
   private List<String> deletable;
 
-  /* Reference count for all files in the index.  
+  /* Reference count for all files in the index.
    * Counts how many existing commits reference a file.
    **/
   private Map<String, RefCount> refCounts = new HashMap<String, RefCount>();
@@ -92,7 +94,7 @@ final class IndexFileDeleter {
    * non-commit checkpoint: */
   private List<Collection<String>> lastFiles = new ArrayList<Collection<String>>();
 
-  /* Commits that the IndexDeletionPolicy have decided to delete: */ 
+  /* Commits that the IndexDeletionPolicy have decided to delete: */
   private List<CommitPoint> commitsToDelete = new ArrayList<CommitPoint>();
 
   private PrintStream infoStream;
@@ -107,7 +109,7 @@ final class IndexFileDeleter {
   public static boolean VERBOSE_REF_COUNTS = false;
 
   // Used only for assert
-  private final IndexWriter writer;
+  @Weak private final IndexWriter writer;
 
   void setInfoStream(PrintStream infoStream) {
     this.infoStream = infoStream;
@@ -115,7 +117,7 @@ final class IndexFileDeleter {
       message("setInfoStream deletionPolicy=" + policy);
     }
   }
-  
+
   private void message(String message) {
     infoStream.println("IFD [" + new Date() + "; " + Thread.currentThread().getName() + "]: " + message);
   }
@@ -157,7 +159,7 @@ final class IndexFileDeleter {
     String[] files = null;
     try {
       files = directory.listAll();
-    } catch (NoSuchDirectoryException e) {  
+    } catch (NoSuchDirectoryException e) {
       // it means the directory is empty, so ignore it.
       files = new String[0];
     }
@@ -165,7 +167,7 @@ final class IndexFileDeleter {
     for (String fileName : files) {
 
       if (filter.accept(null, fileName) && !fileName.equals(IndexFileNames.SEGMENTS_GEN)) {
-        
+
         // Add this file to refCounts with initial count 0:
         getRefCount(fileName);
 
@@ -246,7 +248,7 @@ final class IndexFileDeleter {
     // Now delete anything with ref count at 0.  These are
     // presumably abandoned files eg due to crash of
     // IndexWriter.
-    for(Map.Entry<String, RefCount> entry : refCounts.entrySet() ) {  
+    for(Map.Entry<String, RefCount> entry : refCounts.entrySet() ) {
       RefCount rc = entry.getValue();
       final String fileName = entry.getKey();
       if (0 == rc.count) {
@@ -266,7 +268,7 @@ final class IndexFileDeleter {
     // Always protect the incoming segmentInfos since
     // sometime it may not be the most recent commit
     checkpoint(segmentInfos, false);
-    
+
     startingCommitDeleted = currentCommitPoint == null ? false : currentCommitPoint.isDeleted();
 
     deleteCommits();
@@ -343,7 +345,7 @@ final class IndexFileDeleter {
       segmentPrefix1 = null;
       segmentPrefix2 = null;
     }
-    
+
     for(int i=0;i<files.length;i++) {
       String fileName = files[i];
       if (filter.accept(null, fileName) &&
@@ -402,7 +404,7 @@ final class IndexFileDeleter {
       deleteCommits();
     }
   }
-  
+
   public void deletePendingFiles() throws IOException {
     assert locked();
     if (deletable != null) {
@@ -421,7 +423,7 @@ final class IndexFileDeleter {
   /**
    * For definition of "check point" see IndexWriter comments:
    * "Clarification: Check Points (and commits)".
-   * 
+   *
    * Writer calls this when it has made a "consistent
    * change" to the index, meaning new files are written to
    * the index and the in-memory SegmentInfos have been
@@ -638,7 +640,7 @@ final class IndexFileDeleter {
     Collection<String> files;
     String segmentsFileName;
     boolean deleted;
-    Directory directory;
+    @Weak Directory directory;
     Collection<CommitPoint> commitsToDelete;
     long version;
     long generation;

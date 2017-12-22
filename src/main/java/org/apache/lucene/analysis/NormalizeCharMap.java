@@ -20,13 +20,15 @@ package org.apache.lucene.analysis;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.j2objc.annotations.Weak;
+
 /**
  * Holds a map of String input to String output, to be used
  * with {@link MappingCharFilter}.
  */
 public class NormalizeCharMap {
 
-  Map<Character, NormalizeCharMap> submap;
+  @Weak Map<Character, NormalizeCharMap> submap;
   String normStr;
   int diff;
 

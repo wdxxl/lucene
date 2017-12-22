@@ -1,5 +1,7 @@
 package org.apache.lucene.store;
 
+import java.io.Serializable;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -18,7 +20,8 @@ package org.apache.lucene.store;
  */
 
 import java.util.ArrayList;
-import java.io.Serializable;
+
+import com.google.j2objc.annotations.Weak;
 
 /** @lucene.internal */
 public class RAMFile implements Serializable {
@@ -27,7 +30,7 @@ public class RAMFile implements Serializable {
 
   protected ArrayList<byte[]> buffers = new ArrayList<byte[]>();
   long length;
-  RAMDirectory directory;
+  @Weak RAMDirectory directory;
   protected long sizeInBytes;
 
   // This is publicly modifiable via Directory.touchFile(), so direct access not supported
@@ -35,7 +38,7 @@ public class RAMFile implements Serializable {
 
   // File used as buffer, in no RAMDirectory
   public RAMFile() {}
-  
+
   RAMFile(RAMDirectory directory) {
     this.directory = directory;
   }
@@ -80,8 +83,8 @@ public class RAMFile implements Serializable {
   }
 
   /**
-   * Expert: allocate a new buffer. 
-   * Subclasses can allocate differently. 
+   * Expert: allocate a new buffer.
+   * Subclasses can allocate differently.
    * @param size size of allocated buffer.
    * @return allocated buffer.
    */
@@ -92,5 +95,5 @@ public class RAMFile implements Serializable {
   public synchronized long getSizeInBytes() {
     return sizeInBytes;
   }
-  
+
 }
