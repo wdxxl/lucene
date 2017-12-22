@@ -1,5 +1,10 @@
 package org.apache.lucene.index;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -21,15 +26,12 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.SetOnce;
 import org.apache.lucene.util.SetOnce.AlreadySetException;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
+import com.google.j2objc.annotations.Weak;
 
 /**
  * <p>Expert: a MergePolicy determines the sequence of
  * primitive merge operations.</p>
- * 
+ *
  * <p>Whenever the segments in an index have been altered by
  * {@link IndexWriter}, either the addition of a newly
  * flushed segment, addition of many segments from
@@ -48,7 +50,7 @@ import java.util.Map;
  * SerialMergeScheduler}, the merges will be run
  * sequentially but if it is using {@link
  * ConcurrentMergeScheduler} they will be run concurrently.</p>
- * 
+ *
  * <p>The default MergePolicy is {@link
  * TieredMergePolicy}.</p>
  *
@@ -163,7 +165,7 @@ public abstract class MergePolicy implements java.io.Closeable {
       }
       return b.toString();
     }
-    
+
     /**
      * Returns the total size in bytes of this merge. Note that this does not
      * indicate the size of the merged segment, but the input total size.
@@ -247,7 +249,7 @@ public abstract class MergePolicy implements java.io.Closeable {
     }
   }
 
-  protected final SetOnce<IndexWriter> writer;
+  @Weak protected final SetOnce<IndexWriter> writer;
 
   /**
    * Creates a new merge policy instance. Note that if you intend to use it
@@ -262,19 +264,19 @@ public abstract class MergePolicy implements java.io.Closeable {
    * Sets the {@link IndexWriter} to use by this merge policy. This method is
    * allowed to be called only once, and is usually set by IndexWriter. If it is
    * called more than once, {@link AlreadySetException} is thrown.
-   * 
+   *
    * @see SetOnce
    */
   public void setIndexWriter(IndexWriter writer) {
     this.writer.set(writer);
   }
-  
+
   /**
    * Determine what set of merge operations are now necessary on the index.
    * {@link IndexWriter} calls this whenever there is a change to the segments.
    * This call is always synchronized on the {@link IndexWriter} instance so
    * only one thread at a time will call this method.
-   * 
+   *
    * @param segmentInfos
    *          the total set of segments in the index
    */
@@ -287,7 +289,7 @@ public abstract class MergePolicy implements java.io.Closeable {
    * {@link IndexWriter#forceMerge} method is called. This call is always
    * synchronized on the {@link IndexWriter} instance so only one thread at a
    * time will call this method.
-   * 
+   *
    * @param segmentInfos
    *          the total set of segments in the index
    * @param maxSegmentCount
@@ -309,7 +311,7 @@ public abstract class MergePolicy implements java.io.Closeable {
   /**
    * Determine what set of merge operations is necessary in order to expunge all
    * deletes from the index.
-   * 
+   *
    * @param segmentInfos
    *          the total set of segments in the index
    */

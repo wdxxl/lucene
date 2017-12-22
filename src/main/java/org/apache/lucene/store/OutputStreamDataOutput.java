@@ -16,24 +16,27 @@ package org.apache.lucene.store;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.OutputStream;
 
-import java.io.*;
+import com.google.j2objc.annotations.Weak;
 
 /**
  * A {@link DataOutput} wrapping a plain {@link OutputStream}.
  */
 public class OutputStreamDataOutput extends DataOutput implements Closeable {
-  private final OutputStream os;
-  
+  @Weak private final OutputStream os;
+
   public OutputStreamDataOutput(OutputStream os) {
     this.os = os;
   }
-  
+
   @Override
   public void writeByte(byte b) throws IOException {
     os.write(b);
   }
-  
+
   @Override
   public void writeBytes(byte[] b, int offset, int length) throws IOException {
     os.write(b, offset, length);

@@ -24,13 +24,15 @@ import org.apache.lucene.document.Fieldable;
 import org.apache.lucene.index.FieldInfo.IndexOptions;
 import org.apache.lucene.util.RamUsageEstimator;
 
+import com.google.j2objc.annotations.Weak;
+
 // TODO: break into separate freq and prox writers as
 // codecs; make separate container (tii/tis/skip/*) that can
 // be configured as any number of files 1..N
 final class FreqProxTermsWriterPerField extends TermsHashConsumerPerField implements Comparable<FreqProxTermsWriterPerField> {
 
   final FreqProxTermsWriterPerThread perThread;
-  final TermsHashPerField termsHashPerField;
+  @Weak final TermsHashPerField termsHashPerField;
   final FieldInfo fieldInfo;
   final DocumentsWriter.DocState docState;
   final FieldInvertState fieldState;
@@ -79,8 +81,8 @@ final class FreqProxTermsWriterPerField extends TermsHashConsumerPerField implem
       if (fields[i].isIndexed())
         return true;
     return false;
-  }     
-  
+  }
+
   @Override
   void start(Fieldable f) {
     if (fieldState.attributeSource.hasAttribute(PayloadAttribute.class)) {
@@ -97,18 +99,18 @@ final class FreqProxTermsWriterPerField extends TermsHashConsumerPerField implem
     } else {
       payload = payloadAttribute.getPayload();
     }
-    
+
     if (payload != null && payload.length > 0) {
       termsHashPerField.writeVInt(1, (proxCode<<1)|1);
       termsHashPerField.writeVInt(1, payload.length);
       termsHashPerField.writeBytes(1, payload.data, payload.offset, payload.length);
-      hasPayloads = true;      
+      hasPayloads = true;
     } else
       termsHashPerField.writeVInt(1, proxCode<<1);
-    
+
     FreqProxPostingsArray postings = (FreqProxPostingsArray) termsHashPerField.postingsArray;
     postings.lastPositions[termID] = fieldState.position;
-    
+
   }
 
   @Override
@@ -116,7 +118,7 @@ final class FreqProxTermsWriterPerField extends TermsHashConsumerPerField implem
     // First time we're seeing this term since the last
     // flush
     assert docState.testPoint("FreqProxTermsWriterPerField.newTerm start");
-    
+
     FreqProxPostingsArray postings = (FreqProxPostingsArray) termsHashPerField.postingsArray;
     postings.lastDocIDs[termID] = docState.docID;
     if (indexOptions == IndexOptions.DOCS_ONLY) {
@@ -136,9 +138,9 @@ final class FreqProxTermsWriterPerField extends TermsHashConsumerPerField implem
   void addTerm(final int termID) {
 
     assert docState.testPoint("FreqProxTermsWriterPerField.addTerm start");
-    
+
     FreqProxPostingsArray postings = (FreqProxPostingsArray) termsHashPerField.postingsArray;
-    
+
     assert indexOptions == IndexOptions.DOCS_ONLY || postings.docFreqs[termID] > 0;
 
     if (indexOptions == IndexOptions.DOCS_ONLY) {
@@ -179,7 +181,7 @@ final class FreqProxTermsWriterPerField extends TermsHashConsumerPerField implem
       }
     }
   }
-  
+
   @Override
   ParallelPostingsArray createPostingsArray(int size) {
     return new FreqProxPostingsArray(size);
@@ -222,7 +224,7 @@ final class FreqProxTermsWriterPerField extends TermsHashConsumerPerField implem
       return ParallelPostingsArray.BYTES_PER_POSTING + 4 * RamUsageEstimator.NUM_BYTES_INT;
     }
   }
-  
+
   public void abort() {}
 }
 

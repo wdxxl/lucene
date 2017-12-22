@@ -2,6 +2,8 @@ package org.apache.lucene.util;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.google.j2objc.annotations.Weak;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -36,10 +38,10 @@ public final class SetOnce<T> {
       super("The object cannot be set twice!");
     }
   }
-  
-  private volatile T obj = null;
+
+  @Weak private volatile T obj = null;
   private final AtomicBoolean set;
-  
+
   /**
    * A default constructor which does not set the internal object, and allows
    * setting it by calling {@link #set(Object)}.
@@ -60,7 +62,7 @@ public final class SetOnce<T> {
     this.obj = obj;
     set = new AtomicBoolean(true);
   }
-  
+
   /** Sets the given object. If the object has already been set, an exception is thrown. */
   public final void set(T obj) {
     if (set.compareAndSet(false, true)) {
@@ -69,7 +71,7 @@ public final class SetOnce<T> {
       throw new AlreadySetException();
     }
   }
-  
+
   /** Returns the object set by {@link #set(Object)}. */
   public final T get() {
     return obj;

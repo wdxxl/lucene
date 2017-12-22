@@ -297,7 +297,7 @@ public class IndexWriter implements Closeable, TwoPhaseCommit {
   // merges
   private HashSet<SegmentInfo> mergingSegments = new HashSet<SegmentInfo>();
 
-  private MergePolicy mergePolicy;
+  @Weak private MergePolicy mergePolicy;
   // TODO 4.0: this should be made final once the setter is removed
   private /*final*/MergeScheduler mergeScheduler;
   private LinkedList<MergePolicy.OneMerge> pendingMerges = new LinkedList<MergePolicy.OneMerge>();
