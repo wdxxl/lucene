@@ -16,17 +16,19 @@ package org.apache.lucene.store;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import java.io.Closeable;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
 
-import java.io.*;
-
-import org.apache.lucene.store.DataInput;
+import com.google.j2objc.annotations.Weak;
 
 /**
  * A {@link DataInput} wrapping a plain {@link InputStream}.
  */
 public class InputStreamDataInput extends DataInput implements Closeable {
-  private final InputStream is;
-  
+  @Weak private final InputStream is;
+
   public InputStreamDataInput(InputStream is) {
     this.is = is;
   }
@@ -37,7 +39,7 @@ public class InputStreamDataInput extends DataInput implements Closeable {
     if (v == -1) throw new EOFException();
     return (byte) v;
   }
-  
+
   @Override
   public void readBytes(byte[] b, int offset, int len) throws IOException {
     while (len > 0) {
