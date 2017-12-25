@@ -3,6 +3,8 @@ lucene-core & lucene-grouping 3.5.0
 
 ### Check Cycle
 ```
+cd /Users/wdxxl/Wdxxl_Github/Github/lucene
+
 cycle_finder src/main/java/org/apache/lucene/*.java src/main/java/org/apache/lucene/analysis/*.java src/main/java/org/apache/lucene/analysis/standard/*.java src/main/java/org/apache/lucene/analysis/standard/std31/*.java src/main/java/org/apache/lucene/analysis/tokenattributes/*.java src/main/java/org/apache/lucene/collation/*.java src/main/java/org/apache/lucene/document/*.java src/main/java/org/apache/lucene/index/*.java src/main/java/org/apache/lucene/messages/*.java src/main/java/org/apache/lucene/queryParser/*.java src/main/java/org/apache/lucene/search/*.java src/main/java/org/apache/lucene/search/function/*.java src/main/java/org/apache/lucene/search/grouping/*.java src/main/java/org/apache/lucene/search/payloads/*.java src/main/java/org/apache/lucene/search/spans/*.java  src/main/java/org/apache/lucene/store/*.java  src/main/java/org/apache/lucene/util/*.java  src/main/java/org/apache/lucene/util/fst/*.java  src/main/java/org/apache/lucene/util/packed/*.java > result.log
 ```
 
@@ -75,4 +77,13 @@ cycle_finder src/main/java/org/apache/lucene/*.java src/main/java/org/apache/luc
     MergePolicy -> @Weak protected final SetOnce<IndexWriter> writer;
     SetOnce<T> -> @Weak private volatile T obj = null;
     IndexWriter -> @Weak private MergePolicy mergePolicy;
+规则:
+    ***** Found reference cycle *****
+    TimerThread -> (superclass Thread has (field group with type ThreadGroup))
+    ThreadGroup -> (TimerThread subtype of (field threads with type Thread))
+    ----- Full Types -----
+    Lorg/apache/lucene/search/TimeLimitingCollector$TimerThread;
+    Ljava/lang/ThreadGroup;
+解决方案:
+    暂时没找到
 ```

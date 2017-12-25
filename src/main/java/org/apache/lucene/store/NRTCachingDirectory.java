@@ -28,8 +28,9 @@ import org.apache.lucene.index.IndexFileNames;
 import org.apache.lucene.index.IndexWriter;       // javadocs
 import org.apache.lucene.index.MergePolicy;
 import org.apache.lucene.index.MergeScheduler;
-import org.apache.lucene.store.RAMDirectory;      // javadocs
 import org.apache.lucene.util.IOUtils;
+
+import com.google.j2objc.annotations.Weak;
 
 // TODO
 //   - let subclass dictate policy...?
@@ -277,7 +278,7 @@ public class NRTCachingDirectory extends Directory {
     delegate.close();
   }
 
-  private final ConcurrentHashMap<Thread,MergePolicy.OneMerge> merges = new ConcurrentHashMap<Thread,MergePolicy.OneMerge>();
+  @Weak private final ConcurrentHashMap<Thread,MergePolicy.OneMerge> merges = new ConcurrentHashMap<Thread,MergePolicy.OneMerge>();
 
   public MergeScheduler getMergeScheduler() {
     return new ConcurrentMergeScheduler() {

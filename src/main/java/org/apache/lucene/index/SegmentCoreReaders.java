@@ -24,6 +24,8 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.util.IOUtils;
 
+import com.google.j2objc.annotations.Weak;
+
 /** Holds core readers that are shared (unchanged) when
  * SegmentReader is cloned or reopened */
 final class SegmentCoreReaders {
@@ -47,7 +49,7 @@ final class SegmentCoreReaders {
   final int readBufferSize;
   final int termsIndexDivisor;
 
-  private final SegmentReader owner;
+  @Weak private final SegmentReader owner;
 
   TermInfosReader tis;
   FieldsReader fieldsReaderOrig;
@@ -126,11 +128,11 @@ final class SegmentCoreReaders {
     } else {
       return tisNoIndex;
     }
-  }      
+  }
 
   synchronized boolean termsIndexIsLoaded() {
     return tis != null;
-  }      
+  }
 
   // NOTE: only called from IndexWriter when a near
   // real-time reader is opened, or applyDeletes is run,

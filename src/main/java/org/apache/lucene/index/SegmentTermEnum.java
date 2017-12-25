@@ -18,10 +18,13 @@ package org.apache.lucene.index;
  */
 
 import java.io.IOException;
+
 import org.apache.lucene.store.IndexInput;
 
+import com.google.j2objc.annotations.Weak;
+
 final class SegmentTermEnum extends TermEnum implements Cloneable {
-  private IndexInput input;
+  @Weak private IndexInput input;
   FieldInfos fieldInfos;
   long size;
   long position = -1;
@@ -46,8 +49,8 @@ final class SegmentTermEnum extends TermEnum implements Cloneable {
     input = i;
     fieldInfos = fis;
     isIndex = isi;
-    maxSkipLevels = 1; // use single-level skip lists for formats > -3 
-    
+    maxSkipLevels = 1; // use single-level skip lists for formats > -3
+
     int firstInt = input.readInt();
     if (firstInt >= 0) {
       // original-format file, without explicit format version number
@@ -66,13 +69,13 @@ final class SegmentTermEnum extends TermEnum implements Cloneable {
         throw new IndexFormatTooNewException(input, format, -1, TermInfosWriter.FORMAT_CURRENT);
 
       size = input.readLong();                    // read the size
-      
+
       if(format == -1){
         if (!isIndex) {
           indexInterval = input.readInt();
           formatM1SkipInterval = input.readInt();
         }
-        // switch off skipTo optimization for file format prior to 1.4rc2 in order to avoid a bug in 
+        // switch off skipTo optimization for file format prior to 1.4rc2 in order to avoid a bug in
         // skipTo implementation of these versions
         skipInterval = Integer.MAX_VALUE;
       } else {
@@ -135,28 +138,28 @@ final class SegmentTermEnum extends TermEnum implements Cloneable {
     termInfo.docFreq = input.readVInt();	  // read doc freq
     termInfo.freqPointer += input.readVLong();	  // read freq pointer
     termInfo.proxPointer += input.readVLong();	  // read prox pointer
-    
+
     if(format == -1){
-    //  just read skipOffset in order to increment  file pointer; 
+    //  just read skipOffset in order to increment  file pointer;
     // value is never used since skipTo is switched off
       if (!isIndex) {
         if (termInfo.docFreq > formatM1SkipInterval) {
-          termInfo.skipOffset = input.readVInt(); 
+          termInfo.skipOffset = input.readVInt();
         }
       }
     }
     else{
-      if (termInfo.docFreq >= skipInterval) 
+      if (termInfo.docFreq >= skipInterval)
         termInfo.skipOffset = input.readVInt();
     }
-    
+
     if (isIndex)
       indexPointer += input.readVLong();	  // read index pointer
 
     return true;
   }
 
-  /* Optimized scan, without allocating new terms. 
+  /* Optimized scan, without allocating new terms.
    *  Return number of invocations to next().
    *
    * NOTE: LUCENE-3183: if you pass Term("", "") here then this

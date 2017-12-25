@@ -309,7 +309,7 @@ public class IndexWriter implements Closeable, TwoPhaseCommit {
   private final AtomicInteger flushDeletesCount = new AtomicInteger();
 
   final ReaderPool readerPool = new ReaderPool();
-  final BufferedDeletesStream bufferedDeletesStream;
+  @Weak final BufferedDeletesStream bufferedDeletesStream;
 
   // This is a "write once" variable (like the organic dye
   // on a DVD-R that may or may not be heated by a laser and

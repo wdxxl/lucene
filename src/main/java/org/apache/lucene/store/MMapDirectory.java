@@ -233,7 +233,7 @@ public class MMapDirectory extends FSDirectory {
 
     private int curBufIndex;
 
-    private ByteBuffer curBuf; // redundant for speed: buffers[curBufIndex]
+    @Weak private ByteBuffer curBuf; // redundant for speed: buffers[curBufIndex]
 
     private boolean isClone = false;
 

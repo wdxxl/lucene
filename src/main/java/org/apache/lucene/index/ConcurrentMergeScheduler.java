@@ -1,5 +1,10 @@
 package org.apache.lucene.index;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -18,13 +23,10 @@ package org.apache.lucene.index;
  */
 
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.util.ThreadInterruptedException;
 import org.apache.lucene.util.CollectionUtil;
+import org.apache.lucene.util.ThreadInterruptedException;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Comparator;
+import com.google.j2objc.annotations.Weak;
 
 /** A {@link MergeScheduler} that runs each merge using a
  *  separate thread.
@@ -42,7 +44,7 @@ import java.util.Comparator;
  *  requested then this class will forcefully throttle the
  *  incoming threads by pausing until one more more merges
  *  complete.</p>
- */ 
+ */
 public class ConcurrentMergeScheduler extends MergeScheduler {
 
   private int mergeThreadPriority = -1;
@@ -142,7 +144,7 @@ public class ConcurrentMergeScheduler extends MergeScheduler {
     public int compare(MergeThread t1, MergeThread t2) {
       final MergePolicy.OneMerge m1 = t1.getCurrentMerge();
       final MergePolicy.OneMerge m2 = t2.getCurrentMerge();
-      
+
       final int c1 = m1 == null ? Integer.MAX_VALUE : m1.totalDocCount;
       final int c2 = m2 == null ? Integer.MAX_VALUE : m2.totalDocCount;
 
@@ -178,13 +180,13 @@ public class ConcurrentMergeScheduler extends MergeScheduler {
 
     // Sort the merge threads in descending order.
     CollectionUtil.mergeSort(activeMerges, compareByMergeDocCount);
-    
+
     int pri = mergeThreadPriority;
     final int activeMergeCount = activeMerges.size();
     for (threadIdx=0;threadIdx<activeMergeCount;threadIdx++) {
       final MergeThread mergeThread = activeMerges.get(threadIdx);
       final MergePolicy.OneMerge merge = mergeThread.getCurrentMerge();
-      if (merge == null) { 
+      if (merge == null) {
         continue;
       }
 
@@ -217,7 +219,7 @@ public class ConcurrentMergeScheduler extends MergeScheduler {
   /**
    * Returns true if verbosing is enabled. This method is usually used in
    * conjunction with {@link #message(String)}, like that:
-   * 
+   *
    * <pre>
    * if (verbose()) {
    *   message(&quot;your message&quot;);
@@ -227,7 +229,7 @@ public class ConcurrentMergeScheduler extends MergeScheduler {
   protected boolean verbose() {
     return writer != null && writer.verbose();
   }
-  
+
   /**
    * Outputs the given message - this method assumes {@link #verbose()} was
    * called and returned true.
@@ -312,7 +314,7 @@ public class ConcurrentMergeScheduler extends MergeScheduler {
       message("now merge");
       message("  index: " + writer.segString());
     }
-    
+
     // Iterate, pulling from the IndexWriter's queue of
     // pending merges, until it's empty:
     while (true) {
@@ -399,7 +401,7 @@ public class ConcurrentMergeScheduler extends MergeScheduler {
 
   protected class MergeThread extends Thread {
 
-    IndexWriter tWriter;
+    @Weak IndexWriter tWriter;
     MergePolicy.OneMerge startMerge;
     MergePolicy.OneMerge runningMerge;
     private volatile boolean done;
@@ -441,11 +443,11 @@ public class ConcurrentMergeScheduler extends MergeScheduler {
 
     @Override
     public void run() {
-      
+
       // First time through the while loop we do the merge
       // that we were started with:
       MergePolicy.OneMerge merge = this.startMerge;
-      
+
       try {
 
         if (verbose())
@@ -573,7 +575,7 @@ public class ConcurrentMergeScheduler extends MergeScheduler {
 
   /** Used for testing */
   private static List<ConcurrentMergeScheduler> allInstances;
-  
+
   /** @deprecated this test mode code will be removed in a future release */
   @Deprecated
   public static void setTestMode() {

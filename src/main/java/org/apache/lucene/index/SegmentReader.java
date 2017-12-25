@@ -72,7 +72,7 @@ public class SegmentReader extends IndexReader implements Cloneable {
   IndexInput singleNormStream;
   AtomicInteger singleNormRef;
 
-  SegmentCoreReaders core;
+  @Weak SegmentCoreReaders core;
 
   /**
    * Sets the initial value
@@ -84,7 +84,7 @@ public class SegmentReader extends IndexReader implements Cloneable {
     }
   }
 
-  Map<String,SegmentNorms> norms = new HashMap<String,SegmentNorms>();
+  @Weak Map<String,SegmentNorms> norms = new HashMap<String,SegmentNorms>();
 
   /**
    * @throws CorruptIndexException if the index is corrupt

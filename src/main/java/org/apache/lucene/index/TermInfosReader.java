@@ -22,8 +22,10 @@ import java.io.IOException;
 
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.BytesRef;
-import org.apache.lucene.util.DoubleBarrelLRUCache;
 import org.apache.lucene.util.CloseableThreadLocal;
+import org.apache.lucene.util.DoubleBarrelLRUCache;
+
+import com.google.j2objc.annotations.Weak;
 
 /** This stores a monotonically increasing set of <Term, TermInfo> pairs in a
  * Directory.  Pairs are accessed either by Term or by ordinal position the
@@ -35,12 +37,12 @@ final class TermInfosReader implements Closeable {
   private final FieldInfos fieldInfos;
 
   private final CloseableThreadLocal<ThreadResources> threadResources = new CloseableThreadLocal<ThreadResources>();
-  private final SegmentTermEnum origEnum;
+  @Weak private final SegmentTermEnum origEnum;
   private final long size;
 
   private final TermInfosReaderIndex index;
   private final int indexLength;
-  
+
   private final int totalIndexInterval;
 
   private final static int DEFAULT_CACHE_SIZE = 1024;
@@ -80,14 +82,14 @@ final class TermInfosReader implements Closeable {
   }
 
   private final DoubleBarrelLRUCache<CloneableTerm,TermInfoAndOrd> termsCache = new DoubleBarrelLRUCache<CloneableTerm,TermInfoAndOrd>(DEFAULT_CACHE_SIZE);
-  
+
   /**
    * Per-thread resources managed by ThreadLocal
    */
   private static final class ThreadResources {
     SegmentTermEnum termEnum;
   }
-  
+
   TermInfosReader(Directory dir, String seg, FieldInfos fis, int readBufferSize, int indexDivisor)
        throws CorruptIndexException, IOException {
     boolean success = false;
@@ -140,7 +142,7 @@ final class TermInfosReader implements Closeable {
   public int getSkipInterval() {
     return origEnum.skipInterval;
   }
-  
+
   public int getMaxSkipLevels() {
     return origEnum.maxSkipLevels;
   }
@@ -171,7 +173,7 @@ final class TermInfosReader implements Closeable {
     BytesRef termBytesRef = new BytesRef(term.text);
     return get(term, false, termBytesRef);
   }
-  
+
   /** Returns the TermInfo for a Term in the set, or null. */
   private TermInfo get(Term term, boolean mustSeekEnum, BytesRef termBytesRef) throws IOException {
     if (size == 0) return null;
@@ -182,11 +184,11 @@ final class TermInfosReader implements Closeable {
 
     TermInfoAndOrd tiOrd = termsCache.get(cacheKey);
     ThreadResources resources = getThreadResources();
-    
+
     if (!mustSeekEnum && tiOrd != null) {
       return tiOrd;
     }
-    
+
     // optimize sequential access: first try scanning cached enum w/o seeking
     SegmentTermEnum enumerator = resources.termEnum;
     if (enumerator.term() != null                 // term is at or past current
@@ -205,7 +207,7 @@ final class TermInfosReader implements Closeable {
           if (numScans > 1) {
             // we only  want to put this TermInfo into the cache if
             // scanEnum skipped more than one dictionary entry.
-            // This prevents RangeQueries or WildcardQueries to 
+            // This prevents RangeQueries or WildcardQueries to
             // wipe out the cache when they iterate over a large numbers
             // of terms in order
             if (tiOrd == null) {
@@ -220,7 +222,7 @@ final class TermInfosReader implements Closeable {
         }
 
         return ti;
-      }  
+      }
     }
 
     // random-access: must seek
@@ -281,7 +283,7 @@ final class TermInfosReader implements Closeable {
     ensureIndexIsRead();
     BytesRef termBytesRef = new BytesRef(term.text);
     int indexOffset = index.getIndexOffset(term,termBytesRef);
-    
+
     SegmentTermEnum enumerator = getThreadResources().termEnum;
     index.seekEnum(enumerator, indexOffset);
 

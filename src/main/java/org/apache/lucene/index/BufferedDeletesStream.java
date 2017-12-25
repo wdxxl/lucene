@@ -19,11 +19,11 @@ package org.apache.lucene.index;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Comparator;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -31,7 +31,8 @@ import org.apache.lucene.search.DocIdSet;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryWrapperFilter;
-import org.apache.lucene.util.BytesRef;
+
+import com.google.j2objc.annotations.Weak;
 
 /* Tracks the stream of {@link BuffereDeletes}.
  * When DocumensWriter flushes, its buffered
@@ -60,8 +61,8 @@ class BufferedDeletesStream {
 
   // used only by assert
   private Term lastDeleteTerm;
-  
-  private PrintStream infoStream;
+
+  @Weak private PrintStream infoStream;
   private final AtomicLong bytesUsed = new AtomicLong();
   private final AtomicInteger numTerms = new AtomicInteger();
   private final int messageID;
@@ -75,7 +76,7 @@ class BufferedDeletesStream {
       infoStream.println("BD " + messageID + " [" + new Date() + "; " + Thread.currentThread().getName() + "]: " + message);
     }
   }
-  
+
   public synchronized void setInfoStream(PrintStream infoStream) {
     this.infoStream = infoStream;
   }
@@ -84,7 +85,7 @@ class BufferedDeletesStream {
   // setting its generation:
   public synchronized void push(FrozenBufferedDeletes packet) {
     assert packet.any();
-    assert checkDeleteStats();    
+    assert checkDeleteStats();
     assert packet.gen < nextGen;
     deletes.add(packet);
     numTerms.addAndGet(packet.numTermDeletes);
@@ -92,9 +93,9 @@ class BufferedDeletesStream {
     if (infoStream != null) {
       message("push deletes " + packet + " delGen=" + packet.gen + " packetCount=" + deletes.size());
     }
-    assert checkDeleteStats();    
+    assert checkDeleteStats();
   }
-    
+
   public synchronized void clear() {
     deletes.clear();
     nextGen = 1;
@@ -276,7 +277,7 @@ class BufferedDeletesStream {
       message("applyDeletes took " + (System.currentTimeMillis()-t0) + " msec");
     }
     // assert infos != segmentInfos || !any() : "infos=" + infos + " segmentInfos=" + segmentInfos + " any=" + any;
-    
+
     return new ApplyDeletesResult(anyNewDeletes, nextGen++, allDeleted);
   }
 
@@ -333,19 +334,19 @@ class BufferedDeletesStream {
   // Delete by Term
   private synchronized long applyTermDeletes(Iterable<Term> termsIter, SegmentReader reader) throws IOException {
     long delCount = 0;
-        
+
     assert checkDeleteTerm(null);
-    
+
     final TermDocs docs = reader.termDocs();
 
     for (Term term : termsIter) {
-        
+
       // Since we visit terms sorted, we gain performance
       // by re-using the same TermsEnum and seeking only
       // forwards
       assert checkDeleteTerm(term);
       docs.seek(term);
-          
+
       while (docs.next()) {
         final int docID = docs.doc();
         reader.deleteDocument(docID);
@@ -365,7 +366,7 @@ class BufferedDeletesStream {
     public final Query query;
     public final int limit;
     public QueryAndLimit(Query query, int limit) {
-      this.query = query;       
+      this.query = query;
       this.limit = limit;
     }
   }
@@ -410,7 +411,7 @@ class BufferedDeletesStream {
     lastDeleteTerm = term == null ? null : new Term(term.field(), term.text());
     return true;
   }
-  
+
   // only for assert
   private boolean checkDeleteStats() {
     int numTerms2 = 0;
