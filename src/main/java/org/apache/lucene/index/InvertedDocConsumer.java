@@ -1,5 +1,7 @@
 package org.apache.lucene.index;
 
+import java.io.IOException;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -19,7 +21,8 @@ package org.apache.lucene.index;
 
 import java.util.Collection;
 import java.util.Map;
-import java.io.IOException;
+
+import com.google.j2objc.annotations.Weak;
 
 abstract class InvertedDocConsumer {
 
@@ -35,7 +38,7 @@ abstract class InvertedDocConsumer {
   /** Attempt to free RAM, returning true if any RAM was
    *  freed */
   abstract boolean freeRAM();
-
+  @Weak
   FieldInfos fieldInfos;
 
   void setFieldInfos(FieldInfos fieldInfos) {

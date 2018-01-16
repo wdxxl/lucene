@@ -33,11 +33,13 @@ import org.apache.lucene.store.IndexOutput;
 import org.apache.lucene.util.IOUtils;
 import org.apache.lucene.util.ReaderUtil;
 
+import com.google.j2objc.annotations.Weak;
+
 /**
  * The SegmentMerger class combines two or more Segments, represented by an IndexReader ({@link #add},
- * into a single Segment.  After adding the appropriate readers, call the merge method to combine the 
+ * into a single Segment.  After adding the appropriate readers, call the merge method to combine the
  * segments.
- * 
+ *
  * @see #merge
  * @see #add
  */
@@ -47,8 +49,9 @@ final class SegmentMerger {
   private int termIndexInterval = IndexWriterConfig.DEFAULT_TERM_INDEX_INTERVAL;
 
   private List<IndexReader> readers = new ArrayList<IndexReader>();
+  @Weak
   private final FieldInfos fieldInfos;
-  
+
   private int mergedDocs;
 
   private final CheckAbort checkAbort;
@@ -60,7 +63,7 @@ final class SegmentMerger {
   private SegmentWriteState segmentWriteState;
 
   private final PayloadProcessorProvider payloadProcessorProvider;
-  
+
   SegmentMerger(Directory dir, int termIndexInterval, String name, MergePolicy.OneMerge merge, PayloadProcessorProvider payloadProcessorProvider, FieldInfos fieldInfos) {
     this.payloadProcessorProvider = payloadProcessorProvider;
     directory = dir;
@@ -127,16 +130,16 @@ final class SegmentMerger {
     Collection<String> files = info.files();
     CompoundFileWriter cfsWriter = new CompoundFileWriter(directory, fileName, checkAbort);
     for (String file : files) {
-      assert !IndexFileNames.matchesExtension(file, IndexFileNames.DELETES_EXTENSION) 
+      assert !IndexFileNames.matchesExtension(file, IndexFileNames.DELETES_EXTENSION)
                 : ".del file is not allowed in .cfs: " + file;
       assert !IndexFileNames.isSeparateNormsFile(file)
                 : "separate norms file (.s[0-9]+) is not allowed in .cfs: " + file;
       cfsWriter.addFile(file);
     }
-    
+
     // Perform the merge
     cfsWriter.close();
-   
+
     return files;
   }
 
@@ -198,7 +201,7 @@ final class SegmentMerger {
   }
 
   /**
-   * 
+   *
    * @return The number of documents in all of the readers
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
@@ -284,7 +287,7 @@ final class SegmentMerger {
           ++j;
           continue;
         }
-        // We can optimize this case (doing a bulk byte copy) since the field 
+        // We can optimize this case (doing a bulk byte copy) since the field
         // numbers are identical
         int start = j, numDocs = 0;
         do {
@@ -296,7 +299,7 @@ final class SegmentMerger {
             break;
           }
         } while(numDocs < MAX_RAW_MERGE_DOCS);
-        
+
         IndexInput stream = matchingFieldsReader.rawDocs(rawDocLengths, start, numDocs);
         fieldsWriter.addRawDocuments(stream, rawDocLengths, numDocs);
         docCount += numDocs;
@@ -350,7 +353,7 @@ final class SegmentMerger {
    * @throws IOException
    */
   private final void mergeVectors() throws IOException {
-    TermVectorsWriter termVectorsWriter = 
+    TermVectorsWriter termVectorsWriter =
       new TermVectorsWriter(directory, segment, fieldInfos);
 
     try {
@@ -370,7 +373,7 @@ final class SegmentMerger {
           copyVectorsWithDeletions(termVectorsWriter, matchingVectorsReader, reader);
         } else {
           copyVectorsNoDeletions(termVectorsWriter, matchingVectorsReader, reader);
-          
+
         }
       }
     } finally {
@@ -402,7 +405,7 @@ final class SegmentMerger {
           ++docNum;
           continue;
         }
-        // We can optimize this case (doing a bulk byte copy) since the field 
+        // We can optimize this case (doing a bulk byte copy) since the field
         // numbers are identical
         int start = docNum, numDocs = 0;
         do {
@@ -414,7 +417,7 @@ final class SegmentMerger {
             break;
           }
         } while(numDocs < MAX_RAW_MERGE_DOCS);
-        
+
         matchingVectorsReader.rawDocs(rawDocLengths, rawDocLengths2, start, numDocs);
         termVectorsWriter.addRawDocuments(matchingVectorsReader, rawDocLengths, rawDocLengths2, numDocs);
         checkAbort.work(300 * numDocs);
@@ -425,7 +428,7 @@ final class SegmentMerger {
           // skip deleted docs
           continue;
         }
-        
+
         // NOTE: it's very important to first assign to vectors then pass it to
         // termVectorsWriter.addAllDocVectors; see LUCENE-1282
         TermFreqVector[] vectors = reader.getTermFreqVectors(docNum);
@@ -434,7 +437,7 @@ final class SegmentMerger {
       }
     }
   }
-  
+
   private void copyVectorsNoDeletions(final TermVectorsWriter termVectorsWriter,
                                       final TermVectorsReader matchingVectorsReader,
                                       final IndexReader reader)
@@ -502,7 +505,7 @@ final class SegmentMerger {
         }
         docMaps[i] = docMap;
       }
-      
+
       base += reader.numDocs();
 
       assert reader.numDocs() == reader.maxDoc() - smi.delCount;
@@ -627,7 +630,7 @@ final class SegmentMerger {
     for (IndexReader reader : readers) {
       bufferSize = Math.max(bufferSize, reader.maxDoc());
     }
-    
+
     byte[] normBuffer = null;
     IndexOutput output = null;
     boolean success = false;
@@ -636,7 +639,7 @@ final class SegmentMerger {
       for (int i = 0; i < numFieldInfos; i++) {
         FieldInfo fi = fieldInfos.fieldInfo(i);
         if (fi.isIndexed && !fi.omitNorms) {
-          if (output == null) { 
+          if (output == null) {
             output = directory.createOutput(IndexFileNames.segmentFileName(segment, IndexFileNames.NORMS_EXTENSION));
             output.writeBytes(SegmentNorms.NORMS_HEADER, SegmentNorms.NORMS_HEADER.length);
           }
@@ -697,5 +700,5 @@ final class SegmentMerger {
       }
     }
   }
-  
+
 }

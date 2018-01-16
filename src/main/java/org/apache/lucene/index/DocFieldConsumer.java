@@ -21,8 +21,10 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
-abstract class DocFieldConsumer {
+import com.google.j2objc.annotations.Weak;
 
+abstract class DocFieldConsumer {
+  @Weak
   FieldInfos fieldInfos;
 
   /** Called when DocumentsWriter decides to create a new

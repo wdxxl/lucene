@@ -18,15 +18,19 @@ package org.apache.lucene.index;
  */
 
 import java.io.IOException;
+
 import org.apache.lucene.store.RAMOutputStream;
 import org.apache.lucene.util.ArrayUtil;
 import org.apache.lucene.util.RamUsageEstimator;
+
+import com.google.j2objc.annotations.Weak;
 
 /** This is a DocFieldConsumer that writes stored fields. */
 final class StoredFieldsWriter {
 
   FieldsWriter fieldsWriter;
   final DocumentsWriter docWriter;
+  @Weak
   final FieldInfos fieldInfos;
   int lastDocID;
 

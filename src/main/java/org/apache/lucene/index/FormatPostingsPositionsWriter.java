@@ -1,5 +1,8 @@
 package org.apache.lucene.index;
 
+import java.io.Closeable;
+import java.io.IOException;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -21,13 +24,11 @@ import org.apache.lucene.index.FieldInfo.IndexOptions;
 import org.apache.lucene.store.IndexOutput;
 import org.apache.lucene.util.IOUtils;
 
-
-import java.io.Closeable;
-import java.io.IOException;
+import com.google.j2objc.annotations.Weak;
 
 final class FormatPostingsPositionsWriter extends FormatPostingsPositionsConsumer implements Closeable {
 
-  final FormatPostingsDocsWriter parent;
+  @Weak final FormatPostingsDocsWriter parent;
   final IndexOutput out;
 
   boolean omitTermFreqAndPositions;
@@ -78,7 +79,7 @@ final class FormatPostingsPositionsWriter extends FormatPostingsPositionsConsume
 
   /** Called when we are done adding positions & payloads */
   @Override
-  void finish() {       
+  void finish() {
     lastPosition = 0;
     lastPayloadLength = -1;
   }

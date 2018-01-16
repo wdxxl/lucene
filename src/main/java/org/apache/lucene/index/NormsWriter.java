@@ -18,16 +18,18 @@ package org.apache.lucene.index;
  */
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
-import org.apache.lucene.store.IndexOutput;
 import org.apache.lucene.search.Similarity;
+import org.apache.lucene.store.IndexOutput;
 import org.apache.lucene.util.IOUtils;
+
+import com.google.j2objc.annotations.Weak;
 
 // TODO FI: norms could actually be stored as doc store
 
@@ -39,6 +41,7 @@ import org.apache.lucene.util.IOUtils;
 final class NormsWriter extends InvertedDocEndConsumer {
 
   private final byte defaultNorm = Similarity.getDefault().encodeNormValue(1.0f);
+  @Weak
   private FieldInfos fieldInfos;
   @Override
   public InvertedDocEndConsumerPerThread addThread(DocInverterPerThread docInverterPerThread) {
@@ -118,7 +121,7 @@ final class NormsWriter extends InvertedDocEndConsumer {
             fields[j] = toMerge.get(j);
 
           int numLeft = numFields;
-              
+
           while(numLeft > 0) {
 
             assert uptos[0] < fields[0].docIDs.length : " uptos[0]=" + uptos[0] + " len=" + (fields[0].docIDs.length);
@@ -153,7 +156,7 @@ final class NormsWriter extends InvertedDocEndConsumer {
               numLeft--;
             }
           }
-          
+
           // Fill final hole with defaultNorm
           for(;upto<state.numDocs;upto++)
             normsOut.writeByte(defaultNorm);

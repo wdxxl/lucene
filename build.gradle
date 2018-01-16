@@ -7,4 +7,5 @@ repositories{
 
 dependencies {
     compile 'junit:junit:4.11'
+    compile group: 'com.google.j2objc', name: 'j2objc-annotations', version: '1.3'
 }

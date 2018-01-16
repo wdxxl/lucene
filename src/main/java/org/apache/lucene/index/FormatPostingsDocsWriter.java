@@ -28,11 +28,13 @@ import org.apache.lucene.util.UnicodeUtil;
 import org.apache.lucene.index.FieldInfo.IndexOptions;
 import org.apache.lucene.store.IndexOutput;
 
+import com.google.j2objc.annotations.Weak;
+
 final class FormatPostingsDocsWriter extends FormatPostingsDocsConsumer implements Closeable {
 
   final IndexOutput out;
-  final FormatPostingsTermsWriter parent;
-  final FormatPostingsPositionsWriter posWriter;
+  @Weak final FormatPostingsTermsWriter parent;
+  @Weak final FormatPostingsPositionsWriter posWriter;
   final DefaultSkipListWriter skipListWriter;
   final int skipInterval;
   final int totalNumDocs;

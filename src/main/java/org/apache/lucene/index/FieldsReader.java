@@ -38,12 +38,15 @@ import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.util.CloseableThreadLocal;
 import org.apache.lucene.util.IOUtils;
 
+import com.google.j2objc.annotations.Weak;
+
 /**
  * Class responsible for access to stored document fields.
  * <p/>
  * It uses &lt;segment&gt;.fdt and &lt;segment&gt;.fdx; files.
  */
 final class FieldsReader implements Cloneable, Closeable {
+  @Weak
   private final FieldInfos fieldInfos;
 
   // The main fieldStream, used only for cloning.
@@ -98,7 +101,7 @@ final class FieldsReader implements Cloneable, Closeable {
       idxStream.close();
     }
   }
-  
+
   // Used only by clone
   private FieldsReader(FieldInfos fieldInfos, int numTotalDocs, int size, int format, int formatSize,
                        int docStoreOffset, IndexInput cloneableFieldsStream, IndexInput cloneableIndexStream) {
@@ -113,7 +116,7 @@ final class FieldsReader implements Cloneable, Closeable {
     fieldsStream = (IndexInput) cloneableFieldsStream.clone();
     indexStream = (IndexInput) cloneableIndexStream.clone();
   }
-  
+
   FieldsReader(Directory d, String segment, FieldInfos fn) throws IOException {
     this(d, segment, fn, BufferedIndexInput.BUFFER_SIZE, -1, 0);
   }
@@ -131,7 +134,7 @@ final class FieldsReader implements Cloneable, Closeable {
       cloneableFieldsStream = d.openInput(IndexFileNames.segmentFileName(segment, IndexFileNames.FIELDS_EXTENSION), readBufferSize);
       final String indexStreamFN = IndexFileNames.segmentFileName(segment, IndexFileNames.FIELDS_INDEX_EXTENSION);
       cloneableIndexStream = d.openInput(indexStreamFN, readBufferSize);
-      
+
       // First version of fdx did not include a format
       // header, but, the first int will always be 0 in that
       // case
@@ -155,7 +158,7 @@ final class FieldsReader implements Cloneable, Closeable {
       fieldsStream = (IndexInput) cloneableFieldsStream.clone();
 
       final long indexSize = cloneableIndexStream.length()-formatSize;
-      
+
       if (docStoreOffset != -1) {
         // We read only a slice out of this shared fields file
         this.docStoreOffset = docStoreOffset;
@@ -237,7 +240,7 @@ final class FieldsReader implements Cloneable, Closeable {
       int fieldNumber = fieldsStream.readVInt();
       FieldInfo fi = fieldInfos.fieldInfo(fieldNumber);
       FieldSelectorResult acceptField = fieldSelector == null ? FieldSelectorResult.LOAD : fieldSelector.accept(fi.name);
-      
+
       int bits = fieldsStream.readByte() & 0xFF;
       assert bits <= (FieldsWriter.FIELD_IS_NUMERIC_MASK | FieldsWriter.FIELD_IS_COMPRESSED | FieldsWriter.FIELD_IS_TOKENIZED | FieldsWriter.FIELD_IS_BINARY): "bits=" + Integer.toHexString(bits);
 
@@ -288,7 +291,7 @@ final class FieldsReader implements Cloneable, Closeable {
       final long offset;
       final int docID = docStoreOffset + startDocID + count + 1;
       assert docID <= numTotalDocs;
-      if (docID < numTotalDocs) 
+      if (docID < numTotalDocs)
         offset = indexStream.readLong();
       else
         offset = fieldsStream.length();
@@ -322,10 +325,10 @@ final class FieldsReader implements Cloneable, Closeable {
       default:
         throw new FieldReaderException("Invalid numeric type: " + Integer.toHexString(numeric));
     }
-    
+
     skipFieldBytes(binary, compressed, numBytes);
   }
-  
+
   private void skipFieldBytes(boolean binary, boolean compressed, int toRead) throws IOException {
     if (format >= FieldsWriter.FORMAT_VERSION_UTF8_LENGTH_IN_BYTES || binary || compressed) {
       fieldsStream.seek(fieldsStream.getFilePointer() + toRead);
@@ -382,9 +385,9 @@ final class FieldsReader implements Cloneable, Closeable {
           fieldsStream.skipChars(length);
         }
         f = new LazyField(fi.name, store, index, termVector, length, pointer, binary, compressed, cacheResult);
-      }  
+      }
     }
-    
+
     f.setOmitNorms(fi.omitNorms);
     f.setIndexOptions(fi.indexOptions);
     doc.add(f);
@@ -428,12 +431,12 @@ final class FieldsReader implements Cloneable, Closeable {
                 termVector);
       }
     }
-    
+
     f.setIndexOptions(fi.indexOptions);
     f.setOmitNorms(fi.omitNorms);
     doc.add(f);
   }
-  
+
   // Add the size of field as a byte[] containing the 4 bytes of the integer byte size (high order byte first; char = 2 bytes)
   // Read just the size -- caller must skip the field content to continue reading fields
   // Return the size in bytes or chars, depending on field type
@@ -510,7 +513,7 @@ final class FieldsReader implements Cloneable, Closeable {
     }
 
     /** The value of the field as a Reader, or null.  If null, the String value,
-     * binary value, or TokenStream value is used.  Exactly one of stringValue(), 
+     * binary value, or TokenStream value is used.  Exactly one of stringValue(),
      * readerValue(), getBinaryValue(), and tokenStreamValue() must be set. */
     public Reader readerValue() {
       ensureOpen();
@@ -518,7 +521,7 @@ final class FieldsReader implements Cloneable, Closeable {
     }
 
     /** The value of the field as a TokenStream, or null.  If null, the Reader value,
-     * String value, or binary value is used. Exactly one of stringValue(), 
+     * String value, or binary value is used. Exactly one of stringValue(),
      * readerValue(), getBinaryValue(), and tokenStreamValue() must be set. */
     public TokenStream tokenStreamValue() {
       ensureOpen();
@@ -526,7 +529,7 @@ final class FieldsReader implements Cloneable, Closeable {
     }
 
     /** The value of the field as a String, or null.  If null, the Reader value,
-     * binary value, or TokenStream value is used.  Exactly one of stringValue(), 
+     * binary value, or TokenStream value is used.  Exactly one of stringValue(),
      * readerValue(), getBinaryValue(), and tokenStreamValue() must be set. */
     public String stringValue() {
       ensureOpen();
@@ -564,7 +567,7 @@ final class FieldsReader implements Cloneable, Closeable {
         } else{
           return (String) fieldsData;
         }
-        
+
       }
     }
 
@@ -601,7 +604,7 @@ final class FieldsReader implements Cloneable, Closeable {
             b = new byte[toRead];
           else
             b = result;
-   
+
           IndexInput localFieldsStream = getFieldStream();
 
           // Throw this IOException since IndexReader.document does so anyway, so probably not that big of a change for people

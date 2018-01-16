@@ -22,6 +22,8 @@ import java.io.PrintStream;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.BitVector;
 
+import com.google.j2objc.annotations.Weak;
+
 /**
  * @lucene.experimental
  */
@@ -29,6 +31,7 @@ public class SegmentWriteState {
   public final PrintStream infoStream;
   public final Directory directory;
   public final String segmentName;
+  @Weak
   public final FieldInfos fieldInfos;
   public final int numDocs;
   public boolean hasVectors;
@@ -56,8 +59,8 @@ public class SegmentWriteState {
    * smaller values result in bigger indexes, less acceleration and more
    * accelerable cases. More detailed experiments would be useful here. */
   public final int skipInterval = 16;
-  
-  /** Expert: The maximum number of skip levels. Smaller values result in 
+
+  /** Expert: The maximum number of skip levels. Smaller values result in
    * slightly smaller indexes, but slower skipping in big posting lists.
    */
   public final int maxSkipLevels = 10;
