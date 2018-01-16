@@ -22,13 +22,15 @@ import java.io.IOException;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.IOUtils;
 
+import com.google.j2objc.annotations.Weak;
+
 final class FormatPostingsFieldsWriter extends FormatPostingsFieldsConsumer {
 
   final Directory dir;
   final String segment;
   TermInfosWriter termsOut;
   final FieldInfos fieldInfos;
-  FormatPostingsTermsWriter termsWriter;
+  @Weak FormatPostingsTermsWriter termsWriter;
   final DefaultSkipListWriter skipListWriter;
   final int totalNumDocs;
 

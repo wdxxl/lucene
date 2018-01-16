@@ -20,10 +20,12 @@ package org.apache.lucene.index;
 import java.io.Closeable;
 import java.io.IOException;
 
+import com.google.j2objc.annotations.Weak;
+
 final class FormatPostingsTermsWriter extends FormatPostingsTermsConsumer implements Closeable {
 
-  final FormatPostingsFieldsWriter parent;
-  final FormatPostingsDocsWriter docsWriter;
+  @Weak final FormatPostingsFieldsWriter parent;
+  @Weak final FormatPostingsDocsWriter docsWriter;
   final TermInfosWriter termsOut;
   FieldInfo fieldInfo;
 
