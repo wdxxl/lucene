@@ -20,11 +20,14 @@ package org.apache.lucene.index;
 
 import java.io.Closeable;
 import java.io.IOException;
-import org.apache.lucene.store.IndexOutput;
+
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.IndexOutput;
+import org.apache.lucene.util.ArrayUtil;
 import org.apache.lucene.util.IOUtils;
 import org.apache.lucene.util.UnicodeUtil;
-import org.apache.lucene.util.ArrayUtil;
+
+import com.google.j2objc.annotations.Weak;
 
 
 /** This stores a monotonically increasing set of <Term, TermInfo> pairs in a
@@ -41,6 +44,7 @@ final class TermInfosWriter implements Closeable {
   // NOTE: always change this if you switch to a new format!
   public static final int FORMAT_CURRENT = FORMAT_VERSION_UTF8_LENGTH_IN_BYTES;
 
+  @Weak
   private FieldInfos fieldInfos;
   private IndexOutput output;
   private TermInfo lastTi = new TermInfo();
@@ -66,8 +70,8 @@ final class TermInfosWriter implements Closeable {
    * smaller values result in bigger indexes, less acceleration and more
    * accelerable cases. More detailed experiments would be useful here. */
   int skipInterval = 16;
-  
-  /** Expert: The maximum number of skip levels. Smaller values result in 
+
+  /** Expert: The maximum number of skip levels. Smaller values result in
    * slightly smaller indexes, but slower skipping in big posting lists.
    */
   int maxSkipLevels = 10;
@@ -169,7 +173,7 @@ final class TermInfosWriter implements Closeable {
     }
     if (utf16Result1.length == 0 && lastFieldNumber == -1) {
       // If there is a field named "" (empty string) with a term text of "" (empty string) then we
-      // will get 0 on this comparison, yet, it's "OK". 
+      // will get 0 on this comparison, yet, it's "OK".
       return -1;
     }
     return utf16Result1.length - utf16Result2.length;

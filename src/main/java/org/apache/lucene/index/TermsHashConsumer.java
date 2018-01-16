@@ -21,11 +21,13 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
+import com.google.j2objc.annotations.Weak;
+
 abstract class TermsHashConsumer {
   abstract TermsHashConsumerPerThread addThread(TermsHashPerThread perThread);
   abstract void flush(Map<TermsHashConsumerPerThread,Collection<TermsHashConsumerPerField>> threadsAndFields, final SegmentWriteState state) throws IOException;
   abstract void abort();
-
+  @Weak
   FieldInfos fieldInfos;
 
   void setFieldInfos(FieldInfos fieldInfos) {

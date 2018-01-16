@@ -31,7 +31,9 @@ import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.IndexOutput;
 import org.apache.lucene.util.StringHelper;
 
+import com.google.j2objc.annotations.AutoreleasePool;
 import com.google.j2objc.annotations.Weak;
+import com.google.j2objc.annotations.WeakOuter;
 
 /** Access to the Fieldable Info file that describes document fields and whether or
  *  not they are indexed. Each segment has a separate Fieldable Info file. Objects
@@ -113,9 +115,11 @@ final class FieldInfos {
    */
   @Override
   synchronized public Object clone() {
+	@WeakOuter
     FieldInfos fis = new FieldInfos();
     final int numField = byNumber.size();
     for(int i=0;i<numField;i++) {
+      @WeakOuter
       FieldInfo fi = (FieldInfo) ( byNumber.get(i)).clone();
       fis.byNumber.add(fi);
       fis.byName.put(fi.name, fi);
@@ -133,6 +137,7 @@ final class FieldInfos {
   }
 
   /** Returns true if any fields do not omitTermFreqAndPositions */
+  @AutoreleasePool
   boolean hasProx() {
     final int numFields = byNumber.size();
     for(int i=0;i<numFields;i++) {
@@ -244,9 +249,11 @@ final class FieldInfos {
    * @param storePayloads true if payloads should be stored for this field
    * @param indexOptions if term freqs should be omitted for this field
    */
+
   synchronized public FieldInfo add(String name, boolean isIndexed, boolean storeTermVector,
                        boolean storePositionWithTermVector, boolean storeOffsetWithTermVector,
                        boolean omitNorms, boolean storePayloads, IndexOptions indexOptions) {
+	@WeakOuter
     FieldInfo fi = fieldInfo(name);
     if (fi == null) {
       return addInternal(name, isIndexed, storeTermVector, storePositionWithTermVector, storeOffsetWithTermVector, omitNorms, storePayloads, indexOptions);
@@ -268,6 +275,7 @@ final class FieldInfos {
                                 boolean storeTermVector, boolean storePositionWithTermVector,
                                 boolean storeOffsetWithTermVector, boolean omitNorms, boolean storePayloads, IndexOptions indexOptions) {
     name = StringHelper.intern(name);
+    @WeakOuter
     FieldInfo fi = new FieldInfo(name, isIndexed, byNumber.size(), storeTermVector, storePositionWithTermVector,
                                  storeOffsetWithTermVector, omitNorms, storePayloads, indexOptions);
     byNumber.add(fi);
@@ -275,13 +283,16 @@ final class FieldInfos {
     return fi;
   }
 
+  @AutoreleasePool
   public int fieldNumber(String fieldName) {
     FieldInfo fi = fieldInfo(fieldName);
     return (fi != null) ? fi.number : -1;
   }
 
   public FieldInfo fieldInfo(String fieldName) {
-    return  byName.get(fieldName);
+	@WeakOuter
+	FieldInfo fi = byName.get(fieldName);
+    return fi;
   }
 
   /**
@@ -330,6 +341,7 @@ final class FieldInfos {
     }
   }
 
+  @AutoreleasePool
   public void write(IndexOutput output) throws IOException {
     output.writeVInt(CURRENT_FORMAT);
     output.writeVInt(size());
@@ -353,6 +365,7 @@ final class FieldInfos {
     }
   }
 
+  @AutoreleasePool
   private void read(IndexInput input, String fileName) throws IOException {
     int firstInt = input.readVInt();
 

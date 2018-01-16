@@ -19,8 +19,10 @@ package org.apache.lucene.index;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
+
+import com.google.j2objc.annotations.Weak;
 
 
 /**
@@ -34,6 +36,7 @@ import java.util.HashMap;
 final class DocFieldProcessor extends DocConsumer {
 
   final DocumentsWriter docWriter;
+  @Weak
   final FieldInfos fieldInfos;
   final DocFieldConsumer consumer;
   final StoredFieldsWriter fieldsWriter;

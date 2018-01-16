@@ -1,5 +1,7 @@
 package org.apache.lucene.index;
 
+import com.google.j2objc.annotations.WeakOuter;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -29,26 +31,26 @@ public final class FieldInfo {
   boolean storeOffsetWithTermVector;
   boolean storePositionWithTermVector;
 
-  public boolean omitNorms; // omit norms associated with indexed fields  
+  public boolean omitNorms; // omit norms associated with indexed fields
   public IndexOptions indexOptions;
-  
+
   boolean storePayloads; // whether this field stores payloads together with term positions
 
   /**
    * Controls how much information is stored in the postings lists.
    * @lucene.experimental
    */
-  public static enum IndexOptions { 
+  public static enum IndexOptions {
     /** only documents are indexed: term frequencies and positions are omitted */
     DOCS_ONLY,
-    /** only documents and term frequencies are indexed: positions are omitted */  
+    /** only documents and term frequencies are indexed: positions are omitted */
     DOCS_AND_FREQS,
     /** full postings: documents, frequencies, and positions */
-    DOCS_AND_FREQS_AND_POSITIONS 
+    DOCS_AND_FREQS_AND_POSITIONS
   };
 
-  FieldInfo(String na, boolean tk, int nu, boolean storeTermVector, 
-            boolean storePositionWithTermVector,  boolean storeOffsetWithTermVector, 
+  FieldInfo(String na, boolean tk, int nu, boolean storeTermVector,
+            boolean storePositionWithTermVector,  boolean storeOffsetWithTermVector,
             boolean omitNorms, boolean storePayloads, IndexOptions indexOptions) {
     name = na;
     isIndexed = tk;
@@ -73,11 +75,13 @@ public final class FieldInfo {
 
   @Override
   public Object clone() {
-    return new FieldInfo(name, isIndexed, number, storeTermVector, storePositionWithTermVector,
-                         storeOffsetWithTermVector, omitNorms, storePayloads, indexOptions);
+	@WeakOuter
+	FieldInfo fi = new FieldInfo(name, isIndexed, number, storeTermVector, storePositionWithTermVector,
+            storeOffsetWithTermVector, omitNorms, storePayloads, indexOptions);
+    return fi;
   }
 
-  void update(boolean isIndexed, boolean storeTermVector, boolean storePositionWithTermVector, 
+  void update(boolean isIndexed, boolean storeTermVector, boolean storePositionWithTermVector,
               boolean storeOffsetWithTermVector, boolean omitNorms, boolean storePayloads, IndexOptions indexOptions) {
 
     if (this.isIndexed != isIndexed) {

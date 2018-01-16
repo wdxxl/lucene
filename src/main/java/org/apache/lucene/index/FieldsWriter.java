@@ -2,13 +2,13 @@ package org.apache.lucene.index;
 
 /**
  * Copyright 2004 The Apache Software Foundation
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -27,6 +27,8 @@ import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.IndexOutput;
 import org.apache.lucene.store.RAMOutputStream;
 import org.apache.lucene.util.IOUtils;
+
+import com.google.j2objc.annotations.Weak;
 
 final class FieldsWriter {
   static final int FIELD_IS_TOKENIZED = 1 << 0;
@@ -47,13 +49,13 @@ final class FieldsWriter {
   // currently unused: static final int FIELD_IS_NUMERIC_BYTE = 6 << _NUMERIC_BIT_SHIFT;
 
   // the next possible bits are: 1 << 6; 1 << 7
-  
+
   // Original format
   static final int FORMAT = 0;
 
   // Changed strings to UTF8
   static final int FORMAT_VERSION_UTF8_LENGTH_IN_BYTES = 1;
-  
+
   // Lucene 3.0: Removal of compressed fields
   static final int FORMAT_LUCENE_3_0_NO_COMPRESSED_FIELDS = 2;
 
@@ -64,7 +66,8 @@ final class FieldsWriter {
   // than the current one, and always change this if you
   // switch to a new format!
   static final int FORMAT_CURRENT = FORMAT_LUCENE_3_2_NUMERIC_FIELDS;
-  
+
+  @Weak
   private FieldInfos fieldInfos;
 
   // If null - we were supplied with streams, if notnull - we manage them ourselves

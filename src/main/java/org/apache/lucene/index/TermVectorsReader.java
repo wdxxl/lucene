@@ -27,6 +27,8 @@ import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.util.ArrayUtil;
 import org.apache.lucene.util.IOUtils;
 
+import com.google.j2objc.annotations.Weak;
+
 class TermVectorsReader implements Cloneable, Closeable {
 
   // NOTE: if you make a new format, it must be larger than
@@ -42,12 +44,12 @@ class TermVectorsReader implements Cloneable, Closeable {
   // NOTE: always change this if you switch to a new format!
   static final int FORMAT_CURRENT = FORMAT_UTF8_LENGTH_IN_BYTES;
 
-  //The size in bytes that the FORMAT_VERSION will take up at the beginning of each file 
+  //The size in bytes that the FORMAT_VERSION will take up at the beginning of each file
   static final int FORMAT_SIZE = 4;
 
   static final byte STORE_POSITIONS_WITH_TERMVECTOR = 0x1;
   static final byte STORE_OFFSET_WITH_TERMVECTOR = 0x2;
-  
+  @Weak
   private FieldInfos fieldInfos;
 
   private IndexInput tvx;
@@ -59,7 +61,7 @@ class TermVectorsReader implements Cloneable, Closeable {
   // The docID offset where our docs begin in the index
   // file.  This will be 0 if we have our own private file.
   private int docStoreOffset;
-  
+
   private final int format;
 
   TermVectorsReader(Directory d, String segment, FieldInfos fieldInfos)
@@ -71,7 +73,7 @@ class TermVectorsReader implements Cloneable, Closeable {
     throws CorruptIndexException, IOException {
     this(d, segment, fieldInfos, readBufferSize, -1, 0);
   }
-    
+
   TermVectorsReader(Directory d, String segment, FieldInfos fieldInfos, int readBufferSize, int docStoreOffset, int size)
     throws CorruptIndexException, IOException {
     boolean success = false;
@@ -208,7 +210,7 @@ class TermVectorsReader implements Cloneable, Closeable {
   }
 
   /**
-   * 
+   *
    * @return The number of documents in the reader
    */
   int size() {
@@ -274,7 +276,7 @@ class TermVectorsReader implements Cloneable, Closeable {
    * @param field The field within the document to retrieve
    * @return The TermFreqVector for the document and field or null if there is no termVector for this field.
    * @throws IOException if there is an error reading the term vector files
-   */ 
+   */
   TermFreqVector get(int docNum, String field) throws IOException {
     // Check if no term vectors are available for this segment at all
     ParallelArrayTermVectorMapper mapper = new ParallelArrayTermVectorMapper();
@@ -324,10 +326,10 @@ class TermVectorsReader implements Cloneable, Closeable {
 
   /**
    * Return all term vectors stored for this document or null if the could not be read in.
-   * 
+   *
    * @param docNum The document number to retrieve the vector for
    * @return All term frequency vectors
-   * @throws IOException if there is an error reading the term vector files 
+   * @throws IOException if there is an error reading the term vector files
    */
   TermFreqVector[] get(int docNum) throws IOException {
     TermFreqVector[] result = null;
@@ -396,12 +398,12 @@ class TermVectorsReader implements Cloneable, Closeable {
 
 
   /**
-   * 
+   *
    * @param field The field to read in
    * @param tvfPointer The pointer within the tvf file where we should start reading
    * @param mapper The mapper used to map the TermVector
    * @throws IOException
-   */ 
+   */
   private void readTermVector(String field, long tvfPointer, TermVectorMapper mapper)
           throws IOException {
 
@@ -412,12 +414,12 @@ class TermVectorsReader implements Cloneable, Closeable {
     int numTerms = tvf.readVInt();
     //System.out.println("Num Terms: " + numTerms);
     // If no terms - return a constant empty termvector. However, this should never occur!
-    if (numTerms == 0) 
+    if (numTerms == 0)
       return;
-    
+
     boolean storePositions;
     boolean storeOffsets;
-    
+
     if (format >= FORMAT_VERSION){
       byte bits = tvf.readByte();
       storePositions = (bits & STORE_POSITIONS_WITH_TERMVECTOR) != 0;
@@ -451,7 +453,7 @@ class TermVectorsReader implements Cloneable, Closeable {
       totalLength = start + deltaLength;
 
       final String term;
-      
+
       if (preUTF8) {
         // Term stored as java chars
         if (charBuffer.length < totalLength) {
@@ -513,7 +515,7 @@ class TermVectorsReader implements Cloneable, Closeable {
 
   @Override
   protected Object clone() throws CloneNotSupportedException {
-    
+
     final TermVectorsReader clone = (TermVectorsReader) super.clone();
 
     // These are null when a TermVectorsReader was created
@@ -523,7 +525,7 @@ class TermVectorsReader implements Cloneable, Closeable {
       clone.tvd = (IndexInput) tvd.clone();
       clone.tvf = (IndexInput) tvf.clone();
     }
-    
+
     return clone;
   }
 }
@@ -567,7 +569,7 @@ class ParallelArrayTermVectorMapper extends TermVectorMapper
     }
     if (storingPositions)
     {
-      this.positions[currentPosition] = positions; 
+      this.positions[currentPosition] = positions;
     }
     currentPosition++;
   }

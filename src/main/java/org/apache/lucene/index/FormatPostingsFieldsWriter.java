@@ -29,6 +29,7 @@ final class FormatPostingsFieldsWriter extends FormatPostingsFieldsConsumer {
   final Directory dir;
   final String segment;
   TermInfosWriter termsOut;
+  @Weak
   final FieldInfos fieldInfos;
   @Weak FormatPostingsTermsWriter termsWriter;
   final DefaultSkipListWriter skipListWriter;
@@ -42,14 +43,14 @@ final class FormatPostingsFieldsWriter extends FormatPostingsFieldsConsumer {
     boolean success = false;
     try {
       termsOut = new TermInfosWriter(dir, segment, fieldInfos, state.termIndexInterval);
-      
+
       // TODO: this is a nasty abstraction violation (that we
       // peek down to find freqOut/proxOut) -- we need a
       // better abstraction here whereby these child consumers
       // can provide skip data or not
       skipListWriter = new DefaultSkipListWriter(termsOut.skipInterval,
           termsOut.maxSkipLevels, totalNumDocs, null, null);
-      
+
       termsWriter = new FormatPostingsTermsWriter(state, this);
       success = true;
     } finally {

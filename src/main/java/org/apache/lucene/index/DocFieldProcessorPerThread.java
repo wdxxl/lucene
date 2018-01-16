@@ -1,5 +1,8 @@
 package org.apache.lucene.index;
 
+import java.io.IOException;
+import java.util.Collection;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -18,14 +21,15 @@ package org.apache.lucene.index;
  */
 
 import java.util.Comparator;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.io.IOException;
+
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Fieldable;
 import org.apache.lucene.util.ArrayUtil;
 import org.apache.lucene.util.RamUsageEstimator;
+
+import com.google.j2objc.annotations.Weak;
 
 /**
  * Gathers all Fieldables for a document under the same
@@ -41,6 +45,7 @@ final class DocFieldProcessorPerThread extends DocConsumerPerThread {
   float docBoost;
   int fieldGen;
   final DocFieldProcessor docFieldProcessor;
+  @Weak
   final FieldInfos fieldInfos;
   final DocFieldConsumerPerThread consumer;
 
@@ -73,7 +78,7 @@ final class DocFieldProcessorPerThread extends DocConsumerPerThread {
       while (field != null) {
         final DocFieldProcessorPerField next = field.next;
         try {
-          field.abort(); 
+          field.abort();
         } catch (Throwable t) {
           if (th == null) {
             th = t;
@@ -82,7 +87,7 @@ final class DocFieldProcessorPerThread extends DocConsumerPerThread {
         field = next;
       }
     }
-    
+
     try {
       fieldsWriter.abort();
     } catch (Throwable t) {
@@ -90,7 +95,7 @@ final class DocFieldProcessorPerThread extends DocConsumerPerThread {
         th = t;
       }
     }
-    
+
     try {
       consumer.abort();
     } catch (Throwable t) {
@@ -98,7 +103,7 @@ final class DocFieldProcessorPerThread extends DocConsumerPerThread {
         th = t;
       }
     }
-    
+
     // If any errors occured, throw it.
     if (th != null) {
       if (th instanceof RuntimeException) throw (RuntimeException) th;
@@ -193,7 +198,7 @@ final class DocFieldProcessorPerThread extends DocConsumerPerThread {
     assert docFieldProcessor.docWriter.writer.testPoint("DocumentsWriter.ThreadState.init start");
 
     fieldCount = 0;
-    
+
     final int thisFieldGen = fieldGen++;
 
     final List<Fieldable> docFields = doc.getFields();
@@ -298,7 +303,7 @@ final class DocFieldProcessorPerThread extends DocConsumerPerThread {
       return both;
     }
   }
-  
+
   private static final Comparator<DocFieldProcessorPerField> fieldsComp = new Comparator<DocFieldProcessorPerField>() {
     public int compare(DocFieldProcessorPerField o1, DocFieldProcessorPerField o2) {
       return o1.fieldInfo.name.compareTo(o2.fieldInfo.name);

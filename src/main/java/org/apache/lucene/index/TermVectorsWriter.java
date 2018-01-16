@@ -1,5 +1,7 @@
 package org.apache.lucene.index;
 
+import java.io.IOException;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -23,11 +25,12 @@ import org.apache.lucene.util.IOUtils;
 import org.apache.lucene.util.StringHelper;
 import org.apache.lucene.util.UnicodeUtil;
 
-import java.io.IOException;
+import com.google.j2objc.annotations.Weak;
 
 final class TermVectorsWriter {
-  
+
   private IndexOutput tvx = null, tvd = null, tvf = null;
+  @Weak
   private FieldInfos fieldInfos;
   final UnicodeUtil.UTF8Result[] utf8Results = new UnicodeUtil.UTF8Result[] {new UnicodeUtil.UTF8Result(),
                                                                              new UnicodeUtil.UTF8Result()};
@@ -56,7 +59,7 @@ final class TermVectorsWriter {
   /**
    * Add a complete document specified by all its term vectors. If document has no
    * term vectors, add value for tvx.
-   * 
+   *
    * @param vectors
    * @throws IOException
    */
@@ -113,7 +116,7 @@ final class TermVectorsWriter {
         for (int j=0; j<numTerms; j++) {
 
           UnicodeUtil.UTF16toUTF8(terms[j], 0, terms[j].length(), utf8Results[utf8Upto]);
-          
+
           int start = StringHelper.bytesDifference(utf8Results[1-utf8Upto].result,
                                                    utf8Results[1-utf8Upto].length,
                                                    utf8Results[utf8Upto].result,
@@ -196,7 +199,7 @@ final class TermVectorsWriter {
     assert tvd.getFilePointer() == tvdPosition;
     assert tvf.getFilePointer() == tvfPosition;
   }
-  
+
   /** Close all streams. */
   final void close() throws IOException {
     // make an effort to close all streams we can but remember and re-throw

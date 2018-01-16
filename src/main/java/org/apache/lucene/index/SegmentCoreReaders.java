@@ -24,6 +24,8 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.util.IOUtils;
 
+import com.google.j2objc.annotations.Weak;
+
 /** Holds core readers that are shared (unchanged) when
  * SegmentReader is cloned or reopened */
 final class SegmentCoreReaders {
@@ -37,6 +39,7 @@ final class SegmentCoreReaders {
   private final AtomicInteger ref = new AtomicInteger(1);
 
   final String segment;
+  @Weak
   final FieldInfos fieldInfos;
   final IndexInput freqStream;
   final IndexInput proxStream;
@@ -126,11 +129,11 @@ final class SegmentCoreReaders {
     } else {
       return tisNoIndex;
     }
-  }      
+  }
 
   synchronized boolean termsIndexIsLoaded() {
     return tis != null;
-  }      
+  }
 
   // NOTE: only called from IndexWriter when a near
   // real-time reader is opened, or applyDeletes is run,
