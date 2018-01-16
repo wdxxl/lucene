@@ -1,5 +1,9 @@
 package org.apache.lucene.index;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.lang.ref.WeakReference;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -21,10 +25,6 @@ import org.apache.lucene.index.FieldInfo.IndexOptions;
 import org.apache.lucene.store.IndexOutput;
 import org.apache.lucene.util.IOUtils;
 
-
-import java.io.Closeable;
-import java.io.IOException;
-
 final class FormatPostingsPositionsWriter extends FormatPostingsPositionsConsumer implements Closeable {
 
   final FormatPostingsDocsWriter parent;
@@ -35,7 +35,7 @@ final class FormatPostingsPositionsWriter extends FormatPostingsPositionsConsume
   int lastPayloadLength = -1;
 
   FormatPostingsPositionsWriter(SegmentWriteState state, FormatPostingsDocsWriter parent) throws IOException {
-    this.parent = parent;
+    this.parent = new WeakReference<FormatPostingsDocsWriter>(parent).get();
     omitTermFreqAndPositions = parent.omitTermFreqAndPositions;
     if (parent.parent.parent.fieldInfos.hasProx()) {
       // At least one field does not omit TF, so create the
@@ -78,7 +78,7 @@ final class FormatPostingsPositionsWriter extends FormatPostingsPositionsConsume
 
   /** Called when we are done adding positions & payloads */
   @Override
-  void finish() {       
+  void finish() {
     lastPosition = 0;
     lastPayloadLength = -1;
   }

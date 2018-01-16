@@ -18,21 +18,21 @@ package org.apache.lucene.index;
  */
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.FieldSelector;
-import org.apache.lucene.search.Similarity;
 import org.apache.lucene.index.FieldInfo.IndexOptions;
+import org.apache.lucene.search.Similarity;
 import org.apache.lucene.store.BufferedIndexInput;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.IndexInput;
@@ -74,7 +74,7 @@ public class SegmentReader extends IndexReader implements Cloneable {
   SegmentCoreReaders core;
 
   /**
-   * Sets the initial value 
+   * Sets the initial value
    */
   private class FieldsReaderLocal extends CloseableThreadLocal<FieldsReader> {
     @Override
@@ -82,9 +82,9 @@ public class SegmentReader extends IndexReader implements Cloneable {
       return (FieldsReader) core.getFieldsReaderOrig().clone();
     }
   }
-  
+
   Map<String,SegmentNorms> norms = new HashMap<String,SegmentNorms>();
-  
+
   /**
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
@@ -139,15 +139,15 @@ public class SegmentReader extends IndexReader implements Cloneable {
 
   private boolean checkDeletedCounts() throws IOException {
     final int recomputedCount = deletedDocs.getRecomputedCount();
-     
+
     assert deletedDocs.count() == recomputedCount : "deleted count=" + deletedDocs.count() + " vs recomputed count=" + recomputedCount;
 
-    assert si.getDelCount() == recomputedCount : 
+    assert si.getDelCount() == recomputedCount :
     "delete count mismatch: info=" + si.getDelCount() + " vs BitVector=" + recomputedCount;
 
     // Verify # deletes does not exceed maxDoc for this
     // segment:
-    assert si.getDelCount() <= maxDoc() : 
+    assert si.getDelCount() <= maxDoc() :
     "delete count mismatch: " + recomputedCount + ") exceeds max doc (" + maxDoc() + ") for segment " + si.name;
 
     return true;
@@ -165,7 +165,7 @@ public class SegmentReader extends IndexReader implements Cloneable {
     } else
       assert si.getDelCount() == 0;
   }
-  
+
   /**
    * Clones the norm bytes.  May be overridden by subclasses.  New and experimental.
    * @param bytes Byte array to clone
@@ -176,7 +176,7 @@ public class SegmentReader extends IndexReader implements Cloneable {
     System.arraycopy(bytes, 0, cloneBytes, 0, bytes.length);
     return cloneBytes;
   }
-  
+
   /**
    * Clones the deleteDocs BitVector.  May be overridden by subclasses. New and experimental.
    * @param bv BitVector to clone
@@ -215,10 +215,10 @@ public class SegmentReader extends IndexReader implements Cloneable {
 
   synchronized SegmentReader reopenSegment(SegmentInfo si, boolean doClone, boolean openReadOnly) throws CorruptIndexException, IOException {
     ensureOpen();
-    boolean deletionsUpToDate = (this.si.hasDeletions() == si.hasDeletions()) 
+    boolean deletionsUpToDate = (this.si.hasDeletions() == si.hasDeletions())
                                   && (!si.hasDeletions() || this.si.getDelFileName().equals(si.getDelFileName()));
     boolean normsUpToDate = true;
-    
+
     boolean[] fieldNormsChanged = new boolean[core.fieldInfos.size()];
     final int fieldCount = core.fieldInfos.size();
     for (int i = 0; i < fieldCount; i++) {
@@ -232,7 +232,7 @@ public class SegmentReader extends IndexReader implements Cloneable {
     // also if both old and new readers aren't readonly, we clone to avoid sharing modifications
     if (normsUpToDate && deletionsUpToDate && !doClone && openReadOnly && readOnly) {
       return null;
-    }    
+    }
 
     // When cloning, the incoming SegmentInfos should not
     // have any changes in it:
@@ -258,7 +258,7 @@ public class SegmentReader extends IndexReader implements Cloneable {
         clone.hasChanges = hasChanges;
         hasChanges = false;
       }
-      
+
       if (doClone) {
         if (deletedDocs != null) {
           deletedDocsRef.incrementAndGet();
@@ -286,8 +286,10 @@ public class SegmentReader extends IndexReader implements Cloneable {
         if (doClone || !fieldNormsChanged[i]) {
           final String curField = core.fieldInfos.fieldInfo(i).name;
           SegmentNorms norm = this.norms.get(curField);
-          if (norm != null)
-            clone.norms.put(curField, (SegmentNorms) norm.clone());
+          if (norm != null) {
+        	  SegmentNorms temp = (SegmentNorms) norm.clone();
+              clone.norms.put(curField, new WeakReference<SegmentNorms>(temp).get());
+          }
         }
       }
 
@@ -303,7 +305,7 @@ public class SegmentReader extends IndexReader implements Cloneable {
         clone.decRef();
       }
     }
-    
+
     return clone;
   }
 
@@ -376,7 +378,7 @@ public class SegmentReader extends IndexReader implements Cloneable {
   protected void doClose() throws IOException {
     termVectorsLocal.close();
     fieldsReaderLocal.close();
-    
+
     if (deletedDocs != null) {
       deletedDocsRef.decrementAndGet();
       // null so if an app hangs on to us we still free most ram
@@ -471,7 +473,7 @@ public class SegmentReader extends IndexReader implements Cloneable {
   @Override
   public Document document(int n, FieldSelector fieldSelector) throws CorruptIndexException, IOException {
     ensureOpen();
-    if (n < 0 || n >= maxDoc()) {       
+    if (n < 0 || n >= maxDoc()) {
       throw new IllegalArgumentException("docID must be >= 0 and < maxDoc=" + maxDoc() + " (got docID=" + n + ")");
     }
     return getFieldsReader().doc(n, fieldSelector);
@@ -594,7 +596,7 @@ public class SegmentReader extends IndexReader implements Cloneable {
     final SegmentNorms norm = norms.get(field);
     if (norm == null) {
       // not indexed, or norms not stored
-      return null;  
+      return null;
     }
     return norm.bytes();
   }
@@ -623,7 +625,7 @@ public class SegmentReader extends IndexReader implements Cloneable {
       Arrays.fill(bytes, offset, bytes.length, Similarity.getDefault().encodeNormValue(1.0f));
       return;
     }
-  
+
     norm.bytes(bytes, offset, maxDoc());
   }
 
@@ -649,7 +651,7 @@ public class SegmentReader extends IndexReader implements Cloneable {
         if (!si.hasSeparateNorms(fi.number)) {
           d = cfsDir;
         }
-        
+
         // singleNormFile means multiple norms share this file
         boolean singleNormFile = IndexFileNames.matchesExtension(fileName, IndexFileNames.NORMS_EXTENSION);
         IndexInput normInput = null;
@@ -670,11 +672,11 @@ public class SegmentReader extends IndexReader implements Cloneable {
         } else {
           normInput = d.openInput(fileName);
           // if the segment was created in 3.2 or after, we wrote the header for sure,
-          // and don't need to do the sketchy file size check. otherwise, we check 
+          // and don't need to do the sketchy file size check. otherwise, we check
           // if the size is exactly equal to maxDoc to detect a headerless file.
           // NOTE: remove this check in Lucene 5.0!
           String version = si.getVersion();
-          final boolean isUnversioned = 
+          final boolean isUnversioned =
             (version == null || StringHelper.getVersionComparator().compare(version, "3.2") < 0)
             && normInput.length() == maxDoc();
           if (isUnversioned) {
@@ -746,7 +748,7 @@ public class SegmentReader extends IndexReader implements Cloneable {
   TermVectorsReader getTermVectorsReaderOrig() {
     return core.getTermVectorsReaderOrig();
   }
-  
+
   /** Return a term frequency vector for the specified document and field. The
    *  vector returned contains term numbers and frequencies for all terms in
    *  the specified field of this document, if the field had storeTermVector
@@ -758,13 +760,13 @@ public class SegmentReader extends IndexReader implements Cloneable {
     // Check if this field is invalid or has no stored term vector
     ensureOpen();
     FieldInfo fi = core.fieldInfos.fieldInfo(field);
-    if (fi == null || !fi.storeTermVector) 
+    if (fi == null || !fi.storeTermVector)
       return null;
-    
+
     TermVectorsReader termVectorsReader = getTermVectorsReader();
     if (termVectorsReader == null)
       return null;
-    
+
     return termVectorsReader.get(docNumber, field);
   }
 
@@ -807,14 +809,14 @@ public class SegmentReader extends IndexReader implements Cloneable {
   @Override
   public TermFreqVector[] getTermFreqVectors(int docNumber) throws IOException {
     ensureOpen();
-    
+
     TermVectorsReader termVectorsReader = getTermVectorsReader();
     if (termVectorsReader == null)
       return null;
-    
+
     return termVectorsReader.get(docNumber);
   }
-  
+
   /** {@inheritDoc} */
   @Override
   public String toString() {
@@ -832,7 +834,7 @@ public class SegmentReader extends IndexReader implements Cloneable {
   public String getSegmentName() {
     return core.segment;
   }
-  
+
   /**
    * Return the SegmentInfo of the segment this reader is reading.
    */

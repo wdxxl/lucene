@@ -22,11 +22,12 @@ package org.apache.lucene.index;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 
-import org.apache.lucene.util.IOUtils;
-import org.apache.lucene.util.UnicodeUtil;
 import org.apache.lucene.index.FieldInfo.IndexOptions;
 import org.apache.lucene.store.IndexOutput;
+import org.apache.lucene.util.IOUtils;
+import org.apache.lucene.util.UnicodeUtil;
 
 final class FormatPostingsDocsWriter extends FormatPostingsDocsConsumer implements Closeable {
 
@@ -43,17 +44,17 @@ final class FormatPostingsDocsWriter extends FormatPostingsDocsConsumer implemen
   FieldInfo fieldInfo;
 
   FormatPostingsDocsWriter(SegmentWriteState state, FormatPostingsTermsWriter parent) throws IOException {
-    this.parent = parent;
-    out = parent.parent.dir.createOutput(IndexFileNames.segmentFileName(parent.parent.segment, IndexFileNames.FREQ_EXTENSION));
+    this.parent = new WeakReference<FormatPostingsTermsWriter>(parent).get();
+    out = new WeakReference<IndexOutput>(parent.parent.dir.createOutput(IndexFileNames.segmentFileName(parent.parent.segment, IndexFileNames.FREQ_EXTENSION))).get();
     boolean success = false;
     try {
       totalNumDocs = parent.parent.totalNumDocs;
-      
+
       // TODO: abstraction violation
       skipInterval = parent.parent.termsOut.skipInterval;
-      skipListWriter = parent.parent.skipListWriter;
+      skipListWriter = new WeakReference<DefaultSkipListWriter>(parent.parent.skipListWriter).get();
       skipListWriter.setFreqOutput(out);
-      
+
       posWriter = new FormatPostingsPositionsWriter(state, this);
       success = true;
     } finally {
@@ -101,7 +102,7 @@ final class FormatPostingsDocsWriter extends FormatPostingsDocsConsumer implemen
       out.writeVInt(termDocFreq);
     }
 
-    return posWriter;
+    return new WeakReference<FormatPostingsPositionsWriter>(posWriter).get();
   }
 
   private final TermInfo termInfo = new TermInfo();  // minimize consing

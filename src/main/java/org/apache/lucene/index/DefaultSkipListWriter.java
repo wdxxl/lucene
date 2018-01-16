@@ -18,6 +18,7 @@ package org.apache.lucene.index;
  */
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.Arrays;
 
 import org.apache.lucene.store.IndexOutput;
@@ -33,7 +34,7 @@ class DefaultSkipListWriter extends MultiLevelSkipListWriter {
   private int[] lastSkipPayloadLength;
   private long[] lastSkipFreqPointer;
   private long[] lastSkipProxPointer;
-  
+
   private IndexOutput freqOutput;
   private IndexOutput proxOutput;
 
@@ -42,12 +43,12 @@ class DefaultSkipListWriter extends MultiLevelSkipListWriter {
   private int curPayloadLength;
   private long curFreqPointer;
   private long curProxPointer;
-  
+
   DefaultSkipListWriter(int skipInterval, int numberOfSkipLevels, int docCount, IndexOutput freqOutput, IndexOutput proxOutput) {
     super(skipInterval, numberOfSkipLevels, docCount);
-    this.freqOutput = freqOutput;
-    this.proxOutput = proxOutput;
-    
+    setFreqOutput(freqOutput);
+    setProxOutput(proxOutput);
+
     lastSkipDoc = new int[numberOfSkipLevels];
     lastSkipPayloadLength = new int[numberOfSkipLevels];
     lastSkipFreqPointer = new long[numberOfSkipLevels];
@@ -55,15 +56,17 @@ class DefaultSkipListWriter extends MultiLevelSkipListWriter {
   }
 
   void setFreqOutput(IndexOutput freqOutput) {
-    this.freqOutput = freqOutput;
+	IndexOutput temp = new WeakReference<IndexOutput>(freqOutput).get();
+    this.freqOutput = temp;
   }
 
   void setProxOutput(IndexOutput proxOutput) {
-    this.proxOutput = proxOutput;
+	IndexOutput temp = new WeakReference<IndexOutput>(proxOutput).get();
+    this.proxOutput = temp;
   }
 
   /**
-   * Sets the values for the current skip data. 
+   * Sets the values for the current skip data.
    */
   void setSkipData(int doc, boolean storePayloads, int payloadLength) {
     this.curDoc = doc;
@@ -73,7 +76,7 @@ class DefaultSkipListWriter extends MultiLevelSkipListWriter {
     if (proxOutput != null)
       this.curProxPointer = proxOutput.getFilePointer();
   }
-  
+
   @Override
   protected void resetSkip() {
     super.resetSkip();
@@ -83,7 +86,7 @@ class DefaultSkipListWriter extends MultiLevelSkipListWriter {
     if (proxOutput != null)
       Arrays.fill(lastSkipProxPointer, proxOutput.getFilePointer());
   }
-  
+
   @Override
   protected void writeSkipData(int level, IndexOutput skipBuffer) throws IOException {
     // To efficiently store payloads in the posting lists we do not store the length of
@@ -94,12 +97,12 @@ class DefaultSkipListWriter extends MultiLevelSkipListWriter {
     // Case 1: current field does not store payloads
     //           SkipDatum                 --> DocSkip, FreqSkip, ProxSkip
     //           DocSkip,FreqSkip,ProxSkip --> VInt
-    //           DocSkip records the document number before every SkipInterval th  document in TermFreqs. 
+    //           DocSkip records the document number before every SkipInterval th  document in TermFreqs.
     //           Document numbers are represented as differences from the previous value in the sequence.
     // Case 2: current field stores payloads
     //           SkipDatum                 --> DocSkip, PayloadLength?, FreqSkip,ProxSkip
     //           DocSkip,FreqSkip,ProxSkip --> VInt
-    //           PayloadLength             --> VInt    
+    //           PayloadLength             --> VInt
     //         In this case DocSkip/2 is the difference between
     //         the current and the previous value. If DocSkip
     //         is odd, then a PayloadLength encoded as VInt follows,
@@ -113,7 +116,7 @@ class DefaultSkipListWriter extends MultiLevelSkipListWriter {
         // so we don't store the length again
         skipBuffer.writeVInt(delta * 2);
       } else {
-        // the payload length is different from the previous one. We shift the DocSkip, 
+        // the payload length is different from the previous one. We shift the DocSkip,
         // set the lowest bit and store the current payload length as VInt.
         skipBuffer.writeVInt(delta * 2 + 1);
         skipBuffer.writeVInt(curPayloadLength);
@@ -128,7 +131,7 @@ class DefaultSkipListWriter extends MultiLevelSkipListWriter {
 
     lastSkipDoc[level] = curDoc;
     //System.out.println("write doc at level " + level + ": " + curDoc);
-    
+
     lastSkipFreqPointer[level] = curFreqPointer;
     lastSkipProxPointer[level] = curProxPointer;
   }

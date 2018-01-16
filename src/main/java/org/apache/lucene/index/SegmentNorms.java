@@ -18,17 +18,18 @@ package org.apache.lucene.index;
  */
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.IndexOutput;
 
 /**
- * Byte[] referencing is used because a new norm object needs 
- * to be created for each clone, and the byte array is all 
- * that is needed for sharing between cloned readers.  The 
- * current norm referencing is for sharing between readers 
- * whereas the byte[] referencing is for copy on write which 
+ * Byte[] referencing is used because a new norm object needs
+ * to be created for each clone, and the byte array is all
+ * that is needed for sharing between cloned readers.  The
+ * current norm referencing is for sharing between readers
+ * whereas the byte[] referencing is for copy on write which
  * is independent of reader references (i.e. incRef, decRef).
  */
 
@@ -53,14 +54,14 @@ final class SegmentNorms implements Cloneable {
 
   boolean dirty;
   boolean rollbackDirty;
-  
+
   private final SegmentReader owner;
-  
+
   public SegmentNorms(IndexInput in, int number, long normSeek, SegmentReader owner) {
     this.in = in;
     this.number = number;
     this.normSeek = normSeek;
-    this.owner = owner;
+    this.owner = new WeakReference<SegmentReader>(owner).get();
   }
 
   public synchronized void incRef() {
@@ -197,13 +198,13 @@ final class SegmentNorms implements Cloneable {
     dirty = true;
     return bytes;
   }
-  
+
   // Returns a copy of this Norm instance that shares
   // IndexInput & bytes with the original one
   @Override
   public synchronized Object clone() {
     assert refCount > 0 && (origNorm == null || origNorm.refCount > 0);
-      
+
     SegmentNorms clone;
     try {
       clone = (SegmentNorms) super.clone();

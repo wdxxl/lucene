@@ -18,6 +18,8 @@ package org.apache.lucene.index;
  */
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
+
 import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.util.UnicodeUtil;
 
@@ -128,7 +130,7 @@ final class TermBuffer implements Cloneable {
   protected Object clone() {
     TermBuffer clone = null;
     try {
-      clone = (TermBuffer)super.clone();
+      clone = new WeakReference<TermBuffer>((TermBuffer)super.clone()).get();
     } catch (CloneNotSupportedException e) {}
 
     clone.dirty = true;
