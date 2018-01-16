@@ -1,5 +1,11 @@
 package org.apache.lucene.index;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -25,8 +31,7 @@ import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.IndexOutput;
 import org.apache.lucene.util.StringHelper;
 
-import java.io.IOException;
-import java.util.*;
+import com.google.j2objc.annotations.Weak;
 
 /** Access to the Fieldable Info file that describes document fields and whether or
  *  not they are indexed. Each segment has a separate Fieldable Info file. Objects
@@ -47,7 +52,7 @@ final class FieldInfos {
 
   // whenever you add a new format, make it 1 smaller (negative version logic)!
   static final int CURRENT_FORMAT = FORMAT_OMIT_POSITIONS;
-  
+
   static final byte IS_INDEXED = 0x1;
   static final byte STORE_TERMVECTOR = 0x2;
   static final byte STORE_POSITIONS_WITH_TERMVECTOR = 0x4;
@@ -57,7 +62,9 @@ final class FieldInfos {
   static final byte OMIT_TERM_FREQ_AND_POSITIONS = 0x40;
   static final byte OMIT_POSITIONS = -128;
 
+  @Weak
   private final ArrayList<FieldInfo> byNumber = new ArrayList<FieldInfo>();
+  @Weak
   private final HashMap<String,FieldInfo> byName = new HashMap<String,FieldInfo>();
   private int format;
 
@@ -136,16 +143,16 @@ final class FieldInfos {
     }
     return false;
   }
-  
+
   /**
    * Add fields that are indexed. Whether they have termvectors has to be specified.
-   * 
+   *
    * @param names The names of the fields
    * @param storeTermVectors Whether the fields store term vectors or not
    * @param storePositionWithTermVector true if positions should be stored.
    * @param storeOffsetWithTermVector true if offsets should be stored
    */
-  synchronized public void addIndexed(Collection<String> names, boolean storeTermVectors, boolean storePositionWithTermVector, 
+  synchronized public void addIndexed(Collection<String> names, boolean storeTermVectors, boolean storePositionWithTermVector,
                          boolean storeOffsetWithTermVector) {
     for (String name : names) {
       add(name, true, storeTermVectors, storePositionWithTermVector, storeOffsetWithTermVector);
@@ -154,10 +161,10 @@ final class FieldInfos {
 
   /**
    * Assumes the fields are not storing term vectors.
-   * 
+   *
    * @param names The names of the fields
    * @param isIndexed Whether the fields are indexed or not
-   * 
+   *
    * @see #add(String, boolean)
    */
   synchronized public void add(Collection<String> names, boolean isIndexed) {
@@ -168,7 +175,7 @@ final class FieldInfos {
 
   /**
    * Calls 5 parameter add with false for all TermVector parameters.
-   * 
+   *
    * @param name The name of the Fieldable
    * @param isIndexed true if the field is indexed
    * @see #add(String, boolean, boolean, boolean, boolean)
@@ -179,7 +186,7 @@ final class FieldInfos {
 
   /**
    * Calls 5 parameter add with false for term vector positions and offsets.
-   * 
+   *
    * @param name The name of the field
    * @param isIndexed  true if the field is indexed
    * @param storeTermVector true if the term vector should be stored
@@ -187,12 +194,12 @@ final class FieldInfos {
   synchronized public void add(String name, boolean isIndexed, boolean storeTermVector){
     add(name, isIndexed, storeTermVector, false, false, false);
   }
-  
+
   /** If the field is not yet known, adds it. If it is known, checks to make
    *  sure that the isIndexed flag is the same as was given previously for this
    *  field. If not - marks it as being indexed.  Same goes for the TermVector
    * parameters.
-   * 
+   *
    * @param name The name of the field
    * @param isIndexed true if the field is indexed
    * @param storeTermVector true if the term vector should be stored
@@ -222,7 +229,7 @@ final class FieldInfos {
     add(name, isIndexed, storeTermVector, storePositionWithTermVector,
         storeOffsetWithTermVector, omitNorms, false, IndexOptions.DOCS_AND_FREQS_AND_POSITIONS);
   }
-  
+
   /** If the field is not yet known, adds it. If it is known, checks to make
    *  sure that the isIndexed flag is the same as was given previously for this
    *  field. If not - marks it as being indexed.  Same goes for the TermVector
@@ -258,7 +265,7 @@ final class FieldInfos {
   }
 
   private FieldInfo addInternal(String name, boolean isIndexed,
-                                boolean storeTermVector, boolean storePositionWithTermVector, 
+                                boolean storeTermVector, boolean storePositionWithTermVector,
                                 boolean storeOffsetWithTermVector, boolean omitNorms, boolean storePayloads, IndexOptions indexOptions) {
     name = StringHelper.intern(name);
     FieldInfo fi = new FieldInfo(name, isIndexed, byNumber.size(), storeTermVector, storePositionWithTermVector,
@@ -279,11 +286,11 @@ final class FieldInfos {
 
   /**
    * Return the fieldName identified by its number.
-   * 
+   *
    * @param fieldNumber
    * @return the fieldName or an empty string when the field
    * with the given number doesn't exist.
-   */  
+   */
   public String fieldName(int fieldNumber) {
 	FieldInfo fi = fieldInfo(fieldNumber);
 	return (fi != null) ? fi.name : "";
@@ -294,7 +301,7 @@ final class FieldInfos {
    * @param fieldNumber
    * @return the FieldInfo object or null when the given fieldNumber
    * doesn't exist.
-   */  
+   */
   public FieldInfo fieldInfo(int fieldNumber) {
 	return (fieldNumber >= 0) ? byNumber.get(fieldNumber) : null;
   }
@@ -340,7 +347,7 @@ final class FieldInfos {
         bits |= OMIT_TERM_FREQ_AND_POSITIONS;
       else if (fi.indexOptions == IndexOptions.DOCS_AND_FREQS)
         bits |= OMIT_POSITIONS;
-      
+
       output.writeString(fi.name);
       output.writeByte(bits);
     }
@@ -388,7 +395,7 @@ final class FieldInfos {
       } else {
         indexOptions = IndexOptions.DOCS_AND_FREQS_AND_POSITIONS;
       }
-      
+
       // LUCENE-3027: past indices were able to write
       // storePayloads=true when omitTFAP is also true,
       // which is invalid.  We correct that, here:
@@ -401,7 +408,7 @@ final class FieldInfos {
 
     if (input.getFilePointer() != input.length()) {
       throw new CorruptIndexException("did not read all bytes from file \"" + fileName + "\": read " + input.getFilePointer() + " vs size " + input.length() + " (resource: " + input + ")");
-    }    
+    }
   }
 
 }
