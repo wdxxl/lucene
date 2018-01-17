@@ -49,7 +49,7 @@ final class SegmentCoreReaders {
   final Directory cfsDir;
   final int readBufferSize;
   final int termsIndexDivisor;
-
+  @Weak
   private final SegmentReader owner;
 
   TermInfosReader tis;

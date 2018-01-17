@@ -40,6 +40,7 @@ import org.apache.lucene.util.CloseableThreadLocal;
 import org.apache.lucene.util.StringHelper;
 
 import com.google.j2objc.annotations.Weak;
+import com.google.j2objc.annotations.WeakOuter;
 
 /**
  * @lucene.experimental
@@ -49,7 +50,7 @@ public class SegmentReader extends IndexReader implements Cloneable {
 
   private SegmentInfo si;
   private int readBufferSize;
-
+  @Weak
   CloseableThreadLocal<FieldsReader> fieldsReaderLocal = new FieldsReaderLocal();
   CloseableThreadLocal<TermVectorsReader> termVectorsLocal = new CloseableThreadLocal<TermVectorsReader>();
 
@@ -71,7 +72,7 @@ public class SegmentReader extends IndexReader implements Cloneable {
   // optionally used for the .nrm file shared by multiple norms
   IndexInput singleNormStream;
   AtomicInteger singleNormRef;
-
+  @Weak
   SegmentCoreReaders core;
 
   /**
@@ -80,7 +81,9 @@ public class SegmentReader extends IndexReader implements Cloneable {
   private class FieldsReaderLocal extends CloseableThreadLocal<FieldsReader> {
     @Override
     protected FieldsReader initialValue() {
-      return (FieldsReader) core.getFieldsReaderOrig().clone();
+      @WeakOuter
+      FieldsReader fr = (FieldsReader) core.getFieldsReaderOrig().clone();
+      return fr;
     }
   }
 
