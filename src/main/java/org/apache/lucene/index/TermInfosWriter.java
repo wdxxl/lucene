@@ -47,6 +47,7 @@ final class TermInfosWriter implements Closeable {
   @Weak
   private FieldInfos fieldInfos;
   private IndexOutput output;
+  @Weak
   private TermInfo lastTi = new TermInfo();
   private long size;
 
@@ -81,7 +82,7 @@ final class TermInfosWriter implements Closeable {
   private byte[] lastTermBytes = new byte[10];
   private int lastTermBytesLength = 0;
   private int lastFieldNumber = -1;
-
+  @Weak
   private TermInfosWriter other;
   private UnicodeUtil.UTF8Result utf8Result = new UnicodeUtil.UTF8Result();
 
