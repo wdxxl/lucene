@@ -19,6 +19,8 @@ package org.apache.lucene.index;
 
 import org.apache.lucene.util.UnicodeUtil;
 
+import com.google.j2objc.annotations.WeakOuter;
+
 final class TermVectorsTermsWriterPerThread extends TermsHashConsumerPerThread {
 
   final TermVectorsTermsWriter termsWriter;
@@ -32,7 +34,7 @@ final class TermVectorsTermsWriterPerThread extends TermsHashConsumerPerThread {
     this.termsHashPerThread = termsHashPerThread;
     docState = termsHashPerThread.docState;
   }
-  
+
   // Used by perField when serializing the term vectors
   final ByteSliceReader vectorSliceReader = new ByteSliceReader();
 
@@ -59,7 +61,9 @@ final class TermVectorsTermsWriterPerThread extends TermsHashConsumerPerThread {
 
   @Override
   public TermsHashConsumerPerField addField(TermsHashPerField termsHashPerField, FieldInfo fieldInfo) {
-    return new TermVectorsTermsWriterPerField(termsHashPerField, this, fieldInfo);
+	@WeakOuter
+	TermsHashConsumerPerField thcpf =  new TermVectorsTermsWriterPerField(termsHashPerField, this, fieldInfo);
+    return thcpf;
   }
 
   @Override

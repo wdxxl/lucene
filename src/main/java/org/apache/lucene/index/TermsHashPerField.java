@@ -22,12 +22,12 @@ import java.util.Arrays;
 
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Fieldable;
-import org.apache.lucene.util.UnicodeUtil;
 import org.apache.lucene.util.RamUsageEstimator;
 import org.apache.lucene.util.SorterTemplate;
+import org.apache.lucene.util.UnicodeUtil;
+
 
 final class TermsHashPerField extends InvertedDocConsumerPerField {
-
   final TermsHashConsumerPerField consumer;
 
   final TermsHashPerField nextPerField;
@@ -35,7 +35,7 @@ final class TermsHashPerField extends InvertedDocConsumerPerField {
   final DocumentsWriter.DocState docState;
   final FieldInvertState fieldState;
   CharTermAttribute termAtt;
-  
+
   // Copied from our perThread
   final CharBlockPool charPool;
   final IntBlockPool intPool;
@@ -52,9 +52,9 @@ final class TermsHashPerField extends InvertedDocConsumerPerField {
   private int postingsHashHalfSize = postingsHashSize/2;
   private int postingsHashMask = postingsHashSize-1;
   private int[] postingsHash;
- 
+
   ParallelPostingsArray postingsArray;
-  
+
   public TermsHashPerField(DocInverterPerField docInverterPerField, final TermsHashPerThread perThread, final TermsHashPerThread nextPerThread, final FieldInfo fieldInfo) {
     this.perThread = perThread;
     intPool = perThread.intPool;
@@ -90,7 +90,7 @@ final class TermsHashPerField extends InvertedDocConsumerPerField {
       perThread.termsHash.docWriter.bytesUsed(size);
     }
   }
-  
+
   void shrinkHash(int targetSize) {
     assert postingsCompacted || numPostings == 0;
 
@@ -131,7 +131,7 @@ final class TermsHashPerField extends InvertedDocConsumerPerField {
     if (nextPerField != null)
       nextPerField.abort();
   }
-  
+
   private final void growParallelPostingsArray() {
     int oldSize = postingsArray.size;
     this.postingsArray = this.postingsArray.grow();
@@ -175,7 +175,7 @@ final class TermsHashPerField extends InvertedDocConsumerPerField {
         postingsHash[i] = postingsHash[j];
         postingsHash[j] = o;
       }
-      
+
       @Override
       protected int compare(int i, int j) {
         final int term1 = postingsHash[i], term2 = postingsHash[j];
@@ -197,7 +197,7 @@ final class TermsHashPerField extends InvertedDocConsumerPerField {
         pivotBuf = charPool.buffers[textStart >> DocumentsWriter.CHAR_BLOCK_SHIFT];
         pivotBufPos = textStart & DocumentsWriter.CHAR_BLOCK_MASK;
       }
-  
+
       @Override
       protected int comparePivot(int j) {
         final int term = postingsHash[j];
@@ -208,7 +208,7 @@ final class TermsHashPerField extends InvertedDocConsumerPerField {
         final int pos = textStart & DocumentsWriter.CHAR_BLOCK_MASK;
         return comparePostings(pivotBuf, pivotBufPos, text, pos);
       }
-      
+
       private int pivotTerm, pivotBufPos;
       private char[] pivotBuf;
 
@@ -241,7 +241,7 @@ final class TermsHashPerField extends InvertedDocConsumerPerField {
    *  current tokenText. */
   private boolean postingEquals(final int termID, final char[] tokenText, final int tokenTextLen) {
     final int textStart = postingsArray.textStarts[termID];
-    
+
     final char[] text = perThread.charPool.buffers[textStart >> DocumentsWriter.CHAR_BLOCK_SHIFT];
     assert text != null;
     int pos = textStart & DocumentsWriter.CHAR_BLOCK_MASK;
@@ -252,7 +252,7 @@ final class TermsHashPerField extends InvertedDocConsumerPerField {
         return false;
     return 0xffff == text[pos];
   }
-  
+
   private boolean doCall;
   private boolean doNextCall;
 
@@ -264,7 +264,7 @@ final class TermsHashPerField extends InvertedDocConsumerPerField {
       nextPerField.start(f);
     }
   }
-  
+
   @Override
   boolean start(Fieldable[] fields, int count) throws IOException {
     doCall = consumer.start(fields, count);
@@ -315,7 +315,7 @@ final class TermsHashPerField extends InvertedDocConsumerPerField {
       assert termID >= 0;
 
       postingsArray.textStarts[termID] = textStart;
-          
+
       assert postingsHash[hashPos] == -1;
       postingsHash[hashPos] = termID;
 
@@ -385,7 +385,7 @@ final class TermsHashPerField extends InvertedDocConsumerPerField {
           } else {
             // Unpaired
             ch = tokenText[downto] = UnicodeUtil.UNI_REPLACEMENT_CHAR;
-          }            
+          }
         }
       } else if (ch >= UnicodeUtil.UNI_SUR_HIGH_START && (ch <= UnicodeUtil.UNI_SUR_HIGH_END ||
                                                           ch == 0xffff)) {
@@ -448,7 +448,7 @@ final class TermsHashPerField extends InvertedDocConsumerPerField {
       charPool.charUpto += textLen1;
       System.arraycopy(tokenText, 0, text, textUpto, tokenTextLen);
       text[textUpto+tokenTextLen] = 0xffff;
-          
+
       assert postingsHash[hashPos] == -1;
       postingsHash[hashPos] = termID;
 
@@ -475,7 +475,7 @@ final class TermsHashPerField extends InvertedDocConsumerPerField {
         intUptos[intUptoStart+i] = upto + bytePool.byteOffset;
       }
       postingsArray.byteStarts[termID] = intUptos[intUptoStart];
-      
+
       consumer.newTerm(termID);
 
     } else {
